@@ -44,6 +44,7 @@ namespace IdleonGame.Editor
 
             player.AddComponent<PlayerClimb>();
             player.AddComponent<PlayerMovement>();
+            player.AddComponent<PlayerAutoNavigator>();
             player.AddComponent<PlayerController>();
 
             EditorSceneManager.MarkSceneDirty(scene);

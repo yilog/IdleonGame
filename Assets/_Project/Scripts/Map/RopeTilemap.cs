@@ -10,7 +10,9 @@ namespace IdleonGame.Map
         [SerializeField] private Tilemap tilemap;
         [SerializeField] private TileBase ropeTile;
 
+        public Tilemap Tilemap => tilemap;
         public TileBase RopeTile => ropeTile;
+        public BoundsInt CellBounds => tilemap != null ? tilemap.cellBounds : new BoundsInt();
 
         private void Reset()
         {
@@ -31,15 +33,34 @@ namespace IdleonGame.Map
             ropeTile = tile;
         }
 
-        public bool HasRopeAtWorldPosition(Vector2 worldPosition)
+        public Vector3Int WorldToCell(Vector2 worldPosition)
+        {
+            return tilemap.WorldToCell(worldPosition);
+        }
+
+        public Vector3 GetCellCenterWorld(Vector3Int cell)
+        {
+            return tilemap.GetCellCenterWorld(cell);
+        }
+
+        public bool HasRopeAtCell(Vector3Int cell)
         {
             if (tilemap == null || ropeTile == null)
             {
                 return false;
             }
 
-            var cell = tilemap.WorldToCell(worldPosition);
             return tilemap.GetTile(cell) == ropeTile;
+        }
+
+        public bool HasRopeAtWorldPosition(Vector2 worldPosition)
+        {
+            if (tilemap == null)
+            {
+                return false;
+            }
+
+            return HasRopeAtCell(tilemap.WorldToCell(worldPosition));
         }
 
         public bool HasRopeNearBounds(Bounds bounds)

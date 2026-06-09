@@ -11,6 +11,7 @@ namespace IdleonGame.Player
         [SerializeField] private float jumpVelocity = 8f;
         [SerializeField] private LayerMask groundMask = -1;
         [SerializeField] private float groundCheckDistance = 0.08f;
+        [SerializeField] private float minimumGroundNormalY = 0.65f;
         [SerializeField] private PlayerClimb climb;
 
         private readonly RaycastHit2D[] groundHits = new RaycastHit2D[4];
@@ -78,7 +79,16 @@ namespace IdleonGame.Player
                 useTriggers = false
             };
 
-            return bodyCollider.Cast(Vector2.down, filter, groundHits, groundCheckDistance) > 0;
+            var hitCount = bodyCollider.Cast(Vector2.down, filter, groundHits, groundCheckDistance);
+            for (var i = 0; i < hitCount; i++)
+            {
+                if (groundHits[i].normal.y >= minimumGroundNormalY)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void ConfigureDefaults()

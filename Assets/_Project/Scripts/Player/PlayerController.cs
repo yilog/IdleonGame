@@ -9,11 +9,13 @@ namespace IdleonGame.Player
     {
         [SerializeField] private PlayerMovement movement;
         [SerializeField] private PlayerClimb climb;
+        [SerializeField] private PlayerAutoNavigator autoNavigator;
 
         private void Reset()
         {
             movement = GetComponent<PlayerMovement>();
             climb = GetComponent<PlayerClimb>();
+            autoNavigator = GetComponent<PlayerAutoNavigator>();
         }
 
         private void Awake()
@@ -27,10 +29,22 @@ namespace IdleonGame.Player
             {
                 climb = GetComponent<PlayerClimb>();
             }
+
+            if (autoNavigator == null)
+            {
+                autoNavigator = GetComponent<PlayerAutoNavigator>();
+            }
         }
 
         private void Update()
         {
+            if (autoNavigator != null && autoNavigator.TryGetInput(out var autoHorizontal, out var autoVertical, out var autoJumpPressed))
+            {
+                climb.SetInput(autoVertical);
+                movement.SetInput(autoHorizontal, autoJumpPressed);
+                return;
+            }
+
             var horizontal = UnityEngine.Input.GetAxisRaw("Horizontal");
             var vertical = UnityEngine.Input.GetAxisRaw("Vertical");
             var jumpPressed = UnityEngine.Input.GetButtonDown("Jump");
