@@ -9,13 +9,15 @@ namespace IdleonGame.Player
     {
         [SerializeField] private Camera inputCamera;
         [SerializeField] private TilemapNavigationPathfinder pathfinder;
-        [SerializeField] private float waypointTolerance = 0.12f;
-        [SerializeField] private float horizontalTolerance = 0.08f;
-        [SerializeField] private float verticalTolerance = 0.08f;
+        [SerializeField] private PlayerClimb climb;
+        [SerializeField] private float waypointTolerance = 0.05f;
+        [SerializeField] private float horizontalTolerance = 0.03f;
+        [SerializeField] private float verticalTolerance = 0.03f;
 
         private readonly List<TilemapNavigationNode> path = new List<TilemapNavigationNode>();
         private int currentIndex;
         private bool isNavigating;
+        private bool isWaitingForClimbExit;
 
         public bool IsNavigating => isNavigating;
 
@@ -69,6 +71,19 @@ namespace IdleonGame.Player
                 return true;
             }
 
+            if (climb != null && climb.IsClimbing)
+            {
+                if (Mathf.Abs(delta.y) > verticalTolerance)
+                {
+                    vertical = Mathf.Sign(delta.y);
+                    return true;
+                }
+
+                climb.StopClimbingForNavigation();
+                isWaitingForClimbExit = true;
+                return true;
+            }
+
             if (Mathf.Abs(delta.x) > horizontalTolerance)
             {
                 horizontal = Mathf.Sign(delta.x);
@@ -89,11 +104,13 @@ namespace IdleonGame.Player
             if (!pathfinder.TryFindPath(transform.position, mouseWorld, path))
             {
                 isNavigating = false;
+                isWaitingForClimbExit = false;
                 currentIndex = 0;
                 return;
             }
 
             currentIndex = path.Count > 1 ? 1 : 0;
+            isWaitingForClimbExit = false;
             isNavigating = path.Count > 0;
         }
 
@@ -103,7 +120,7 @@ namespace IdleonGame.Player
             {
                 var target = path[currentIndex];
                 var targetWorld = pathfinder.GetNodeWorldPosition(target);
-                if (Vector2.Distance(transform.position, targetWorld) > waypointTolerance)
+                if (!HasReachedWaypoint(target, targetWorld))
                 {
                     break;
                 }
@@ -113,10 +130,52 @@ namespace IdleonGame.Player
 
             if (currentIndex >= path.Count)
             {
+                if (climb != null && climb.IsClimbing)
+                {
+                    climb.StopClimbingForNavigation();
+                }
+
                 isNavigating = false;
+                isWaitingForClimbExit = false;
                 currentIndex = 0;
                 path.Clear();
             }
+        }
+
+        private bool HasReachedWaypoint(TilemapNavigationNode target, Vector3 targetWorld)
+        {
+            if (target.Kind == NavigationNodeKind.Stand && climb != null && climb.IsClimbing)
+            {
+                return false;
+            }
+
+            if (isWaitingForClimbExit && target.Kind == NavigationNodeKind.Stand)
+            {
+                if (climb != null && !climb.IsClimbing && climb.IsGroundedForNavigation)
+                {
+                    isWaitingForClimbExit = false;
+                    return Mathf.Abs(transform.position.x - targetWorld.x) <= horizontalTolerance;
+                }
+
+                return false;
+            }
+
+            if (currentIndex > 0 && Mathf.Abs(transform.position.x - targetWorld.x) <= horizontalTolerance)
+            {
+                var previous = path[currentIndex - 1];
+                var isVerticalRopeStep = target.Kind == NavigationNodeKind.Rope || (climb != null && climb.IsClimbing);
+                if (isVerticalRopeStep && target.Cell.y > previous.Cell.y)
+                {
+                    return transform.position.y >= targetWorld.y - waypointTolerance;
+                }
+
+                if (isVerticalRopeStep && target.Cell.y < previous.Cell.y)
+                {
+                    return transform.position.y <= targetWorld.y + waypointTolerance;
+                }
+            }
+
+            return Vector2.Distance(transform.position, targetWorld) <= waypointTolerance;
         }
 
         private void FindSceneReferences()
@@ -129,6 +188,11 @@ namespace IdleonGame.Player
             if (pathfinder == null)
             {
                 pathfinder = Object.FindObjectOfType<TilemapNavigationPathfinder>();
+            }
+
+            if (climb == null)
+            {
+                climb = GetComponent<PlayerClimb>();
             }
         }
     }

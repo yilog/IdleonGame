@@ -29,6 +29,7 @@ namespace IdleonGame.Player
         private bool isIgnoringGround;
 
         public bool IsClimbing => isClimbing;
+        public bool IsGroundedForNavigation => IsGrounded();
 
         private void Reset()
         {
@@ -48,6 +49,17 @@ namespace IdleonGame.Player
         public void SetInput(float vertical)
         {
             verticalInput = Mathf.Clamp(vertical, -1f, 1f);
+        }
+
+        public void StopClimbingForNavigation()
+        {
+            if (!isClimbing)
+            {
+                return;
+            }
+
+            verticalInput = 0f;
+            EndClimb();
         }
 
         private void FixedUpdate()
@@ -96,7 +108,7 @@ namespace IdleonGame.Player
                 return false;
             }
 
-            if (canGrabRopeBelow)
+            if (canGrabRopeBelow || CanDescendFromGroundedRope(isOnRope))
             {
                 return true;
             }
@@ -107,6 +119,18 @@ namespace IdleonGame.Player
             }
 
             return verticalInput > 0.1f || !IsGrounded();
+        }
+
+        private bool CanDescendFromGroundedRope(bool isOnRope)
+        {
+            if (!isOnRope || verticalInput >= -0.1f || ropeTilemap == null || bodyCollider == null)
+            {
+                return false;
+            }
+
+            var bounds = bodyCollider.bounds;
+            var feetCell = ropeTilemap.WorldToCell(new Vector2(bounds.center.x, bounds.min.y + 0.05f));
+            return ropeTilemap.HasRopeAtCell(feetCell + Vector3Int.down);
         }
 
         private bool IsOnRope()

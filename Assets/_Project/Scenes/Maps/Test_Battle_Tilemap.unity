@@ -1413,7 +1413,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   climbSpeed: 3
   descendGrabDistance: 0.65
-  climbThroughProbeDistance: 0.02
+  climbThroughProbeDistance: 0.035
   groundCheckDistance: 0.08
   minimumGroundNormalY: 0.65
   ropeTilemap: {fileID: 0}
@@ -1433,9 +1433,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   inputCamera: {fileID: 0}
   pathfinder: {fileID: 0}
-  waypointTolerance: 0.12
-  horizontalTolerance: 0.08
-  verticalTolerance: 0.08
+  climb: {fileID: 0}
+  waypointTolerance: 0.05
+  horizontalTolerance: 0.03
+  verticalTolerance: 0.03
 --- !u!1 &1299602622
 GameObject:
   m_ObjectHideFlags: 0
