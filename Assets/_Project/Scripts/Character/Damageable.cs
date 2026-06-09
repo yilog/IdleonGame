@@ -1,7 +1,11 @@
-﻿namespace IdleonGame.Character
+using IdleonGame.Combat;
+
+namespace IdleonGame.Character
 {
     public interface Damageable
     {
-        // Contract for objects that can receive damage.
+        bool IsDead { get; }
+        CharacterStats Stats { get; }
+        void ApplyDamage(DamageInfo damageInfo);
     }
 }

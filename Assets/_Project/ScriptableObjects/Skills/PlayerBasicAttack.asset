@@ -1,0 +1,22 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 416f69be1986d804f8b610e8ba77457b, type: 3}
+  m_Name: PlayerBasicAttack
+  m_EditorClassIdentifier: 
+  skillId: player_basic_melee
+  displayName: Basic Melee Attack
+  skillType: 0
+  attackPower: 8
+  manaCost: 0
+  cooldownSeconds: 0.45
+  range: 0.75
+  hitboxSize: {x: 1.1, y: 0.85}

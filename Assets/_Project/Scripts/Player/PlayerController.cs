@@ -10,12 +10,14 @@ namespace IdleonGame.Player
         [SerializeField] private PlayerMovement movement;
         [SerializeField] private PlayerClimb climb;
         [SerializeField] private PlayerAutoNavigator autoNavigator;
+        [SerializeField] private PlayerAttack attack;
 
         private void Reset()
         {
             movement = GetComponent<PlayerMovement>();
             climb = GetComponent<PlayerClimb>();
             autoNavigator = GetComponent<PlayerAutoNavigator>();
+            attack = GetComponent<PlayerAttack>();
         }
 
         private void Awake()
@@ -34,12 +36,18 @@ namespace IdleonGame.Player
             {
                 autoNavigator = GetComponent<PlayerAutoNavigator>();
             }
+
+            if (attack == null)
+            {
+                attack = GetComponent<PlayerAttack>();
+            }
         }
 
         private void Update()
         {
             if (autoNavigator != null && autoNavigator.TryGetInput(out var autoHorizontal, out var autoVertical, out var autoJumpPressed))
             {
+                attack?.SetFacingDirection(autoHorizontal);
                 climb.SetInput(autoVertical);
                 movement.SetInput(autoHorizontal, autoJumpPressed);
                 return;
@@ -49,6 +57,7 @@ namespace IdleonGame.Player
             var vertical = UnityEngine.Input.GetAxisRaw("Vertical");
             var jumpPressed = UnityEngine.Input.GetButtonDown("Jump");
 
+            attack?.SetFacingDirection(horizontal);
             climb.SetInput(vertical);
             movement.SetInput(horizontal, jumpPressed);
         }

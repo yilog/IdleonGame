@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.IO;
+using IdleonGame.Character;
 using IdleonGame.Player;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -42,9 +43,11 @@ namespace IdleonGame.Editor
             var collider = player.AddComponent<BoxCollider2D>();
             collider.size = new Vector2(0.9f, 0.95f);
 
+            player.AddComponent<CharacterStats>().Configure(100, 50, 6, 1);
             player.AddComponent<PlayerClimb>();
             player.AddComponent<PlayerMovement>();
             player.AddComponent<PlayerAutoNavigator>();
+            player.AddComponent<PlayerAttack>();
             player.AddComponent<PlayerController>();
 
             EditorSceneManager.MarkSceneDirty(scene);

@@ -1,7 +1,21 @@
-﻿namespace IdleonGame.Combat
+using IdleonGame.Character;
+
+namespace IdleonGame.Combat
 {
-    public sealed class CombatResolver
+    public static class CombatResolver
     {
-        // Calculates final damage after stats, jobs, equipment, buffs, and critical hits.
+        public static int CalculateRawDamage(CharacterStats attacker, AttackDefinition attack)
+        {
+            var baseAttack = attacker != null ? attacker.BaseAttack : 0;
+            var skillPower = attack != null ? attack.AttackPower : 0;
+            return baseAttack + skillPower;
+        }
+
+        public static int CalculateFinalDamage(CharacterStats attacker, CharacterStats defender, AttackDefinition attack)
+        {
+            var rawDamage = CalculateRawDamage(attacker, attack);
+            var defense = defender != null ? defender.Defense : 0;
+            return System.Math.Max(1, rawDamage - defense);
+        }
     }
 }
