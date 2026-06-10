@@ -33,6 +33,7 @@ namespace IdleonGame.Monster
             }
 
             ScanSpawnTiles();
+            SpawnInitialMonsters();
         }
 
         private void Update()
@@ -70,6 +71,14 @@ namespace IdleonGame.Monster
             }
         }
 
+        private void SpawnInitialMonsters()
+        {
+            foreach (var spawnPoint in spawnPoints)
+            {
+                spawnPoint.SpawnInitialMonsters(groundTilemap);
+            }
+        }
+
         private sealed class RuntimeSpawnPoint
         {
             private readonly MonsterSpawnTile tile;
@@ -81,6 +90,19 @@ namespace IdleonGame.Monster
             {
                 this.tile = tile;
                 this.origin = origin;
+                nextSpawnTime = Time.time + tile.MinSpawnInterval;
+            }
+
+            public void SpawnInitialMonsters(Tilemap groundTilemap)
+            {
+                while (activeMonsters.Count < tile.MaxMonsterCount)
+                {
+                    if (!Spawn(groundTilemap))
+                    {
+                        break;
+                    }
+                }
+
                 nextSpawnTime = Time.time + tile.MinSpawnInterval;
             }
 
@@ -96,13 +118,13 @@ namespace IdleonGame.Monster
                 nextSpawnTime = Time.time + tile.MinSpawnInterval;
             }
 
-            private void Spawn(Tilemap groundTilemap)
+            private bool Spawn(Tilemap groundTilemap)
             {
                 var definition = MonsterDatabase.Find(tile.MonsterId);
                 if (definition == null)
                 {
                     Debug.LogWarning($"Monster spawn point tried to spawn unknown monster id: {tile.MonsterId}");
-                    return;
+                    return false;
                 }
 
                 var offsetX = Random.Range(-tile.RandomRangeX, tile.RandomRangeX);
@@ -110,7 +132,10 @@ namespace IdleonGame.Monster
                 if (monster != null)
                 {
                     activeMonsters.Add(monster);
+                    return true;
                 }
+
+                return false;
             }
 
             private void PruneDeadMonsters()

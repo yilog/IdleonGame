@@ -105,6 +105,11 @@ namespace IdleonGame.Editor
                 0,
                 MonsterAttackType.None,
                 1.25f,
+                0.35f,
+                1f,
+                2.5f,
+                1.5f,
+                3.5f,
                 false,
                 2f,
                 definition.Drops);

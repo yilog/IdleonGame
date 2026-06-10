@@ -48,6 +48,11 @@ namespace IdleonGame.Monster
         [SerializeField] private int defense;
         [SerializeField] private MonsterAttackType attackType = MonsterAttackType.None;
         [SerializeField] private float moveSpeed = 1.25f;
+        [SerializeField, Range(0f, 1f)] private float idleChance = 0.35f;
+        [SerializeField] private float minIdleDuration = 1f;
+        [SerializeField] private float maxIdleDuration = 2.5f;
+        [SerializeField] private float minMoveDuration = 1.5f;
+        [SerializeField] private float maxMoveDuration = 3.5f;
         [SerializeField] private bool canAttack;
         [SerializeField] private float deathDestroyDelay = 2f;
         [SerializeField] private MonsterDropEntry[] drops = Array.Empty<MonsterDropEntry>();
@@ -62,6 +67,11 @@ namespace IdleonGame.Monster
         public int Defense => defense;
         public MonsterAttackType AttackType => attackType;
         public float MoveSpeed => moveSpeed;
+        public float IdleChance => Mathf.Clamp01(idleChance);
+        public float MinIdleDuration => Mathf.Max(0.1f, minIdleDuration);
+        public float MaxIdleDuration => Mathf.Max(MinIdleDuration, maxIdleDuration);
+        public float MinMoveDuration => Mathf.Max(0.1f, minMoveDuration);
+        public float MaxMoveDuration => Mathf.Max(MinMoveDuration, maxMoveDuration);
         public bool CanAttack => canAttack;
         public float DeathDestroyDelay => deathDestroyDelay;
         public MonsterDropEntry[] Drops => drops;
@@ -78,6 +88,11 @@ namespace IdleonGame.Monster
             int armor,
             MonsterAttackType type,
             float speed,
+            float idleProbability,
+            float minIdle,
+            float maxIdle,
+            float minMove,
+            float maxMove,
             bool attacks,
             float destroyDelay,
             MonsterDropEntry[] dropTable)
@@ -92,6 +107,11 @@ namespace IdleonGame.Monster
             defense = armor;
             attackType = type;
             moveSpeed = speed;
+            idleChance = Mathf.Clamp01(idleProbability);
+            minIdleDuration = Mathf.Max(0.1f, minIdle);
+            maxIdleDuration = Mathf.Max(minIdleDuration, maxIdle);
+            minMoveDuration = Mathf.Max(0.1f, minMove);
+            maxMoveDuration = Mathf.Max(minMoveDuration, maxMove);
             canAttack = attacks;
             deathDestroyDelay = destroyDelay;
             drops = dropTable ?? Array.Empty<MonsterDropEntry>();

@@ -24,6 +24,8 @@ namespace IdleonGame.Monster
         private Rigidbody2D body;
         private BoxCollider2D bodyCollider;
         private bool isDead;
+        private MovementState movementState;
+        private float movementStateEndsAt;
 
         public MonsterDefinition Definition => definition;
         public bool IsDead => isDead || (stats != null && stats.IsDead);
@@ -52,12 +54,25 @@ namespace IdleonGame.Monster
             {
                 stats.Configure(definition.MaxHealth, definition.MaxMana, definition.AttackPower, definition.Defense);
             }
+
+            PickNextMovementState();
         }
 
         private void FixedUpdate()
         {
             if (IsDead || definition == null)
             {
+                return;
+            }
+
+            if (Time.time >= movementStateEndsAt)
+            {
+                PickNextMovementState();
+            }
+
+            if (movementState == MovementState.Idle)
+            {
+                StopHorizontalMovement();
                 return;
             }
 
@@ -85,6 +100,8 @@ namespace IdleonGame.Monster
             {
                 stats.Configure(definition.MaxHealth, definition.MaxMana, definition.AttackPower, definition.Defense);
             }
+
+            PickNextMovementState();
         }
 
         public void ApplyDamage(DamageInfo damageInfo)
@@ -154,6 +171,34 @@ namespace IdleonGame.Monster
             return hasGroundAhead && !hasWallAhead;
         }
 
+        private void PickNextMovementState()
+        {
+            if (definition == null)
+            {
+                movementState = MovementState.Move;
+                movementStateEndsAt = float.PositiveInfinity;
+                return;
+            }
+
+            movementState = Random.value < definition.IdleChance ? MovementState.Idle : MovementState.Move;
+            var duration = movementState == MovementState.Idle
+                ? Random.Range(definition.MinIdleDuration, definition.MaxIdleDuration)
+                : Random.Range(definition.MinMoveDuration, definition.MaxMoveDuration);
+            movementStateEndsAt = Time.time + duration;
+
+            if (movementState == MovementState.Move && Random.value < 0.5f)
+            {
+                facingDirection *= -1;
+            }
+        }
+
+        private void StopHorizontalMovement()
+        {
+            var velocity = body.velocity;
+            velocity.x = 0f;
+            body.velocity = velocity;
+        }
+
         private void ConfigurePhysics()
         {
             if (body != null)
@@ -178,6 +223,7 @@ namespace IdleonGame.Monster
             {
                 gameObject.layer = monsterLayer;
                 Physics2D.IgnoreLayerCollision(playerLayer, monsterLayer, true);
+                Physics2D.IgnoreLayerCollision(monsterLayer, monsterLayer, true);
             }
         }
 
@@ -193,6 +239,12 @@ namespace IdleonGame.Monster
             {
                 groundTilemap = ground.GetComponent<Tilemap>();
             }
+        }
+
+        private enum MovementState
+        {
+            Idle,
+            Move
         }
     }
 }

@@ -60,6 +60,7 @@ namespace IdleonGame.Editor
             if (playerLayer >= 0 && monsterLayer >= 0)
             {
                 Physics2D.IgnoreLayerCollision(playerLayer, monsterLayer, true);
+                Physics2D.IgnoreLayerCollision(monsterLayer, monsterLayer, true);
             }
         }
 
@@ -173,6 +174,11 @@ namespace IdleonGame.Editor
                 0,
                 MonsterAttackType.None,
                 1.25f,
+                0.35f,
+                1f,
+                2.5f,
+                1.5f,
+                3.5f,
                 false,
                 2f,
                 new[] { drop });

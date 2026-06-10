@@ -22,6 +22,11 @@ MonoBehaviour:
   defense: 0
   attackType: 0
   moveSpeed: 1.25
+  idleChance: 0.35
+  minIdleDuration: 1
+  maxIdleDuration: 2.5
+  minMoveDuration: 1.5
+  maxMoveDuration: 3.5
   canAttack: 0
   deathDestroyDelay: 2
   drops:
