@@ -51,6 +51,7 @@ namespace IdleonGame.Editor
             player.AddComponent<PlayerMovement>();
             player.AddComponent<PlayerAutoNavigator>();
             player.AddComponent<PlayerAttack>();
+            player.AddComponent<PlayerClickInteractor>();
             player.AddComponent<PlayerController>();
 
             EditorSceneManager.MarkSceneDirty(scene);

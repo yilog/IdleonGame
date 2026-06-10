@@ -11,6 +11,7 @@ namespace IdleonGame.Core
             public const int TilemapMonsterSpawn = 30;
             public const int Monster = 45;
             public const int Player = 50;
+            public const int Projectile = 55;
             public const int WorldItem = 60;
         }
     }

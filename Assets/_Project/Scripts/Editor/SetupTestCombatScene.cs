@@ -18,6 +18,7 @@ namespace IdleonGame.Editor
     {
         private const string ScenePath = "Assets/_Project/Scenes/Maps/Test_Battle_Tilemap.unity";
         private const string BasicAttackPath = "Assets/_Project/ScriptableObjects/Skills/PlayerBasicAttack.asset";
+        private const string ArrowAttackPath = "Assets/_Project/ScriptableObjects/Skills/PlayerArrowAttack.asset";
         private const string TestItemTexturePath = "Assets/_Project/Art/Items/TestDropItem.png";
         private const string TestItemPath = "Assets/_Project/ScriptableObjects/Items/TestDropItem.asset";
         private const string ItemDatabasePath = "Assets/_Project/Resources/ItemDatabase.asset";
@@ -38,13 +39,14 @@ namespace IdleonGame.Editor
             IgnorePlayerMonsterCollision();
 
             var attack = CreateBasicAttack();
+            var arrowAttack = CreateArrowAttack();
             var testItem = CreateTestItem();
             CreateItemDatabase(testItem);
             var testMonster = SyncTestMonsterDefinition(testItem.ItemId);
             CreateMonsterDatabase(testMonster);
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
 
-            ConfigurePlayer(attack);
+            ConfigurePlayer(attack, arrowAttack);
             ConfigureMonster();
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -82,6 +84,31 @@ namespace IdleonGame.Editor
                 0.45f,
                 0.75f,
                 new Vector2(1.1f, 0.85f));
+
+            EditorUtility.SetDirty(attack);
+            return attack;
+        }
+
+        private static AttackDefinition CreateArrowAttack()
+        {
+            var attack = AssetDatabase.LoadAssetAtPath<AttackDefinition>(ArrowAttackPath);
+            if (attack == null)
+            {
+                attack = ScriptableObject.CreateInstance<AttackDefinition>();
+                AssetDatabase.CreateAsset(attack, ArrowAttackPath);
+            }
+
+            attack.EditorSetData(
+                "player_arrow_shot",
+                "Arrow Shot",
+                AttackSkillType.RangedProjectile,
+                10,
+                0,
+                0.65f,
+                0f,
+                new Vector2(0.75f, 0.18f),
+                8f,
+                1.8f);
 
             EditorUtility.SetDirty(attack);
             return attack;
@@ -236,7 +263,7 @@ namespace IdleonGame.Editor
             EditorUtility.SetDirty(database);
         }
 
-        private static void ConfigurePlayer(AttackDefinition attack)
+        private static void ConfigurePlayer(AttackDefinition attack, AttackDefinition arrowAttack)
         {
             var player = GameObject.Find("Player_TestBlock");
             if (player == null)
@@ -270,7 +297,12 @@ namespace IdleonGame.Editor
                 attackComponent = player.AddComponent<PlayerAttack>();
             }
 
-            attackComponent.Configure(attack, LayerMask.GetMask(GameLayerNames.Monster));
+            attackComponent.Configure(attack, arrowAttack, LayerMask.GetMask(GameLayerNames.Monster));
+
+            if (player.GetComponent<PlayerClickInteractor>() == null)
+            {
+                player.AddComponent<PlayerClickInteractor>();
+            }
         }
 
         private static void ConfigureMonster()

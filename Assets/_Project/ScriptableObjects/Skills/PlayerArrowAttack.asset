@@ -10,15 +10,15 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 416f69be1986d804f8b610e8ba77457b, type: 3}
-  m_Name: PlayerBasicAttack
-  m_EditorClassIdentifier: 
-  skillId: player_basic_melee
-  displayName: Basic Melee Attack
-  skillType: 0
-  attackPower: 8
+  m_Name: PlayerArrowAttack
+  m_EditorClassIdentifier:
+  skillId: player_arrow_shot
+  displayName: Arrow Shot
+  skillType: 1
+  attackPower: 10
   manaCost: 0
-  cooldownSeconds: 0.45
-  range: 0.75
-  hitboxSize: {x: 1.1, y: 0.85}
+  cooldownSeconds: 0.65
+  range: 0
+  hitboxSize: {x: 0.75, y: 0.18}
   projectileSpeed: 8
-  projectileLifetime: 1.5
+  projectileLifetime: 1.8

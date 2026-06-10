@@ -10,6 +10,7 @@ namespace IdleonGame.Player
         [SerializeField] private Camera inputCamera;
         [SerializeField] private TilemapNavigationPathfinder pathfinder;
         [SerializeField] private PlayerClimb climb;
+        [SerializeField] private bool handleMouseClickInput;
         [SerializeField] private float waypointTolerance = 0.05f;
         [SerializeField] private float horizontalTolerance = 0.03f;
         [SerializeField] private float verticalTolerance = 0.03f;
@@ -28,7 +29,7 @@ namespace IdleonGame.Player
 
         private void Update()
         {
-            if (UnityEngine.Input.GetMouseButtonDown(0))
+            if (handleMouseClickInput && UnityEngine.Input.GetMouseButtonDown(0))
             {
                 TryNavigateToMousePosition();
             }
@@ -92,26 +93,46 @@ namespace IdleonGame.Player
             return true;
         }
 
-        private void TryNavigateToMousePosition()
+        public bool TryNavigateToWorldPosition(Vector3 targetWorld)
         {
             FindSceneReferences();
-            if (inputCamera == null || pathfinder == null)
+            if (pathfinder == null)
             {
-                return;
+                return false;
             }
 
-            var mouseWorld = inputCamera.ScreenToWorldPoint(UnityEngine.Input.mousePosition);
-            if (!pathfinder.TryFindPath(transform.position, mouseWorld, path))
+            if (!pathfinder.TryFindPath(transform.position, targetWorld, path))
             {
                 isNavigating = false;
                 isWaitingForClimbExit = false;
                 currentIndex = 0;
-                return;
+                return false;
             }
 
             currentIndex = path.Count > 1 ? 1 : 0;
             isWaitingForClimbExit = false;
             isNavigating = path.Count > 0;
+            return isNavigating;
+        }
+
+        public void StopNavigation()
+        {
+            isNavigating = false;
+            isWaitingForClimbExit = false;
+            currentIndex = 0;
+            path.Clear();
+        }
+
+        private void TryNavigateToMousePosition()
+        {
+            FindSceneReferences();
+            if (inputCamera == null)
+            {
+                return;
+            }
+
+            var mouseWorld = inputCamera.ScreenToWorldPoint(UnityEngine.Input.mousePosition);
+            TryNavigateToWorldPosition(mouseWorld);
         }
 
         private void AdvanceReachedWaypoints()

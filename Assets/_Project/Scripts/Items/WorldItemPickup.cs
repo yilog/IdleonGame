@@ -23,22 +23,27 @@ namespace IdleonGame.Items
             UpdateSprite();
         }
 
-        private void OnMouseDown()
+        public bool TryPickup(PlayerInventory inventory = null)
         {
-            var inventory = FindObjectOfType<PlayerInventory>();
+            if (inventory == null)
+            {
+                inventory = FindObjectOfType<PlayerInventory>();
+            }
+
             if (inventory == null || string.IsNullOrEmpty(itemId))
             {
-                return;
+                return false;
             }
 
             if (!inventory.AddItem(itemId, count))
             {
                 Debug.Log($"Could not pick up {itemId} x{count}; inventory is full or item id is unknown.");
-                return;
+                return false;
             }
 
             Debug.Log($"Picked up {itemId} x{count}. {inventory.GetInventorySummary()}");
             Destroy(gameObject);
+            return true;
         }
 
         private void UpdateSprite()

@@ -28,15 +28,13 @@ namespace IdleonGame.Navigation
                 return false;
             }
 
-            var clickedGroundCell = groundTilemap.WorldToCell(clickedWorld);
-            clickedGroundCell.z = 0;
-            if (!groundTilemap.HasTile(clickedGroundCell))
+            if (!TryResolveClickedStandCell(clickedWorld, out var goalCell))
             {
                 return false;
             }
 
             var start = GetStartNode(startWorld);
-            var goal = new TilemapNavigationNode(clickedGroundCell + Vector3Int.up, NavigationNodeKind.Stand);
+            var goal = new TilemapNavigationNode(goalCell, NavigationNodeKind.Stand);
             if (!IsValidNode(start) || !IsValidNode(goal))
             {
                 return false;
@@ -48,6 +46,28 @@ namespace IdleonGame.Navigation
         public Vector3 GetNodeWorldPosition(TilemapNavigationNode node)
         {
             return groundTilemap.GetCellCenterWorld(node.Cell);
+        }
+
+        private bool TryResolveClickedStandCell(Vector3 clickedWorld, out Vector3Int standCell)
+        {
+            var clickedCell = groundTilemap.WorldToCell(clickedWorld);
+            clickedCell.z = 0;
+
+            if (groundTilemap.HasTile(clickedCell))
+            {
+                standCell = clickedCell + Vector3Int.up;
+                return true;
+            }
+
+            var belowCell = clickedCell + Vector3Int.down;
+            if (groundTilemap.HasTile(belowCell))
+            {
+                standCell = clickedCell;
+                return true;
+            }
+
+            standCell = default;
+            return false;
         }
 
         private TilemapNavigationNode GetStartNode(Vector3 startWorld)

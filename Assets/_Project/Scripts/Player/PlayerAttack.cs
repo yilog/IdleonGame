@@ -10,12 +10,15 @@ namespace IdleonGame.Player
     public sealed class PlayerAttack : MonoBehaviour
     {
         [SerializeField] private AttackDefinition basicAttack;
+        [SerializeField] private AttackDefinition rangedAttack;
         [SerializeField] private CharacterStats stats;
         [SerializeField] private LayerMask targetLayers;
         [SerializeField] private KeyCode basicAttackKey = KeyCode.J;
+        [SerializeField] private KeyCode rangedAttackKey = KeyCode.K;
 
         private readonly Collider2D[] hitResults = new Collider2D[8];
         private float nextBasicAttackTime;
+        private float nextRangedAttackTime;
         private int facingDirection = 1;
 
         private void Reset()
@@ -50,6 +53,11 @@ namespace IdleonGame.Player
             {
                 TryUseBasicAttack();
             }
+
+            if (UnityEngine.Input.GetKeyDown(rangedAttackKey))
+            {
+                TryUseRangedAttack();
+            }
         }
 
         public void SetFacingDirection(float horizontal)
@@ -66,26 +74,103 @@ namespace IdleonGame.Player
             targetLayers = targets;
         }
 
-        private void TryUseBasicAttack()
+        public void Configure(AttackDefinition meleeAttack, AttackDefinition projectileAttack, LayerMask targets)
+        {
+            basicAttack = meleeAttack;
+            rangedAttack = projectileAttack;
+            targetLayers = targets;
+        }
+
+        public bool IsTargetInBasicAttackRange(Damageable target)
+        {
+            if (basicAttack == null || target == null || target.IsDead)
+            {
+                return false;
+            }
+
+            var targetTransform = (target as Component)?.transform;
+            if (targetTransform == null)
+            {
+                return false;
+            }
+
+            var targetDelta = targetTransform.position - transform.position;
+            var targetDirection = targetDelta.x >= 0f ? 1 : -1;
+            var center = (Vector2)transform.position + Vector2.right * targetDirection * basicAttack.Range;
+            var hitCount = Physics2D.OverlapBoxNonAlloc(center, basicAttack.HitboxSize, 0f, hitResults, targetLayers);
+            for (var i = 0; i < hitCount; i++)
+            {
+                var hit = hitResults[i];
+                if (hit == null)
+                {
+                    continue;
+                }
+
+                if (ReferenceEquals(hit.GetComponentInParent<Damageable>(), target))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool TryUseBasicAttack(Damageable preferredTarget = null)
         {
             if (basicAttack == null || stats == null || Time.time < nextBasicAttackTime || stats.IsDead)
             {
-                return;
+                return false;
+            }
+
+            if (preferredTarget != null)
+            {
+                FaceTarget(preferredTarget);
+                if (!IsTargetInBasicAttackRange(preferredTarget))
+                {
+                    return false;
+                }
             }
 
             if (!stats.SpendMana(basicAttack.ManaCost))
             {
-                return;
+                return false;
             }
 
             nextBasicAttackTime = Time.time + basicAttack.CooldownSeconds;
-            ExecuteMeleeHit();
+            return ExecuteMeleeHit(preferredTarget);
         }
 
-        private void ExecuteMeleeHit()
+        private void TryUseRangedAttack()
+        {
+            if (rangedAttack == null || stats == null || Time.time < nextRangedAttackTime || stats.IsDead)
+            {
+                return;
+            }
+
+            if (!stats.SpendMana(rangedAttack.ManaCost))
+            {
+                return;
+            }
+
+            nextRangedAttackTime = Time.time + rangedAttack.CooldownSeconds;
+            FireArrow();
+        }
+
+        private void FireArrow()
+        {
+            var arrowObject = new GameObject("Projectile_Arrow");
+            arrowObject.transform.position = transform.position + Vector3.right * facingDirection * 0.55f;
+            arrowObject.AddComponent<SpriteRenderer>();
+            arrowObject.AddComponent<Rigidbody2D>();
+            arrowObject.AddComponent<BoxCollider2D>();
+            arrowObject.AddComponent<ArrowProjectile>().Launch(gameObject, stats, rangedAttack, facingDirection, targetLayers);
+        }
+
+        private bool ExecuteMeleeHit(Damageable preferredTarget = null)
         {
             var center = (Vector2)transform.position + Vector2.right * facingDirection * basicAttack.Range;
             var hitCount = Physics2D.OverlapBoxNonAlloc(center, basicAttack.HitboxSize, 0f, hitResults, targetLayers);
+            var didHit = false;
             for (var i = 0; i < hitCount; i++)
             {
                 var hit = hitResults[i];
@@ -100,10 +185,29 @@ namespace IdleonGame.Player
                     continue;
                 }
 
+                if (preferredTarget != null && !ReferenceEquals(damageable, preferredTarget))
+                {
+                    continue;
+                }
+
                 var rawDamage = CombatResolver.CalculateRawDamage(stats, basicAttack);
                 var finalDamage = CombatResolver.CalculateFinalDamage(stats, damageable.Stats, basicAttack);
                 damageable.ApplyDamage(new DamageInfo(gameObject, hit.gameObject, basicAttack, rawDamage, finalDamage));
+                didHit = true;
             }
+
+            return didHit;
+        }
+
+        private void FaceTarget(Damageable target)
+        {
+            var targetTransform = (target as Component)?.transform;
+            if (targetTransform == null)
+            {
+                return;
+            }
+
+            SetFacingDirection(targetTransform.position.x - transform.position.x);
         }
 
 #if UNITY_EDITOR
