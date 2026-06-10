@@ -2,13 +2,14 @@ using System;
 using System.Collections.Generic;
 using IdleonGame.Core;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace IdleonGame.Items
 {
     public static class WorldItemDropper
     {
         private const float DefaultScatterRadius = 0.2f;
-        private static readonly Vector3 DefaultSpawnOffset = new Vector3(0f, 0.15f, 0f);
+        private static readonly Vector3 DefaultSpawnOffset = new Vector3(0f, -0.15f, 0f);
 
         public static void SpawnRandomDrops<TDrop>(
             IEnumerable<TDrop> drops,
@@ -17,7 +18,8 @@ namespace IdleonGame.Items
             Func<TDrop, int> minCountSelector,
             Func<TDrop, int> maxCountSelector,
             Func<TDrop, float> dropChanceSelector,
-            string sourceName = null)
+            string sourceName = null,
+            Scene targetScene = default)
         {
             if (drops == null)
             {
@@ -46,7 +48,7 @@ namespace IdleonGame.Items
                 var minCount = Mathf.Max(1, minCountSelector?.Invoke(drop) ?? 1);
                 var maxCount = Mathf.Max(minCount, maxCountSelector?.Invoke(drop) ?? minCount);
                 var count = UnityEngine.Random.Range(minCount, maxCount + 1);
-                SpawnWorldItem(itemId, count, origin, sourceName);
+                SpawnWorldItem(itemId, count, origin, sourceName, DefaultScatterRadius, targetScene);
             }
         }
 
@@ -55,7 +57,8 @@ namespace IdleonGame.Items
             int count,
             Vector3 origin,
             string sourceName = null,
-            float scatterRadius = DefaultScatterRadius)
+            float scatterRadius = DefaultScatterRadius,
+            Scene targetScene = default)
         {
             var item = ItemDatabase.Find(itemId);
             if (item == null)
@@ -66,6 +69,11 @@ namespace IdleonGame.Items
             }
 
             var dropObject = new GameObject($"Drop_{itemId}");
+            if (targetScene.IsValid())
+            {
+                SceneManager.MoveGameObjectToScene(dropObject, targetScene);
+            }
+
             dropObject.transform.position = origin + DefaultSpawnOffset + new Vector3(UnityEngine.Random.Range(-scatterRadius, scatterRadius), 0f, 0f);
 
             var spriteRenderer = dropObject.AddComponent<SpriteRenderer>();
@@ -74,7 +82,7 @@ namespace IdleonGame.Items
 
             var collider = dropObject.AddComponent<BoxCollider2D>();
             collider.isTrigger = true;
-            collider.size = new Vector2(0.55f, 0.55f);
+            collider.size = new Vector2(0.27f, 0.27f);
 
             var pickup = dropObject.AddComponent<WorldItemPickup>();
             pickup.Configure(itemId, count);

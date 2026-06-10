@@ -1,6 +1,7 @@
 using IdleonGame.Character;
 using IdleonGame.Core;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
 
 namespace IdleonGame.Monster
@@ -16,6 +17,10 @@ namespace IdleonGame.Monster
 
             var monsterObject = new GameObject($"Monster_{definition.MonsterId}");
             monsterObject.transform.position = position;
+            if (groundTilemap != null && groundTilemap.gameObject.scene.IsValid())
+            {
+                SceneManager.MoveGameObjectToScene(monsterObject, groundTilemap.gameObject.scene);
+            }
 
             var monsterLayer = LayerMask.NameToLayer(GameLayerNames.Monster);
             if (monsterLayer >= 0)

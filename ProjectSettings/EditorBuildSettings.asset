@@ -4,5 +4,17 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/_Project/Scenes/Battle.unity
+    guid: 9de17ac1b67d343489677b8d89e8e5ab
+  - enabled: 1
+    path: Assets/_Project/Scenes/Levels/level1_1.unity
+    guid: 7a85af4c759027e449fb600760bb6d89
+  - enabled: 1
+    path: Assets/_Project/Scenes/Levels/level1_2.unity
+    guid: 2923e64918fa7d54f9cda1cc0b074032
+  - enabled: 1
+    path: Assets/_Project/Scenes/Maps/Test_Battle_Tilemap.unity
+    guid: 976e0babbfaedbf448bf3813aee479c3
   m_configObjects: {}

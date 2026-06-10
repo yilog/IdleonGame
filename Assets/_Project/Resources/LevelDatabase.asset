@@ -9,11 +9,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0eda6a025a46ab54993a3c9154ff2b50, type: 3}
-  m_Name: TestDropItem
+  m_Script: {fileID: 11500000, guid: 2649bd0e1505f98419821bfd45dfc1b8, type: 3}
+  m_Name: LevelDatabase
   m_EditorClassIdentifier: 
-  itemId: test_drop_item
-  displayName: Test Drop Item
-  icon: {fileID: 21300000, guid: d9c57c15ef72ccc428b6ee3651703b39, type: 3}
-  itemType: 1
-  maxStackCount: 99
+  levels:
+  - {fileID: 11400000, guid: bc388d8e55a213c488976fc6d97f2b96, type: 2}
+  - {fileID: 11400000, guid: a2c14fb22ddbc274dbdeb5bba0c98751, type: 2}
+  defaultLevelId: level1_1

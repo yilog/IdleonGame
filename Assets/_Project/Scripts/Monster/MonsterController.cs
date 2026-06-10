@@ -142,7 +142,8 @@ namespace IdleonGame.Monster
                 drop => drop.MinCount,
                 drop => drop.MaxCount,
                 drop => drop.DropChance,
-                name);
+                name,
+                gameObject.scene);
 
             var spriteRenderer = GetComponent<SpriteRenderer>();
             if (spriteRenderer != null)

@@ -15,10 +15,10 @@ MonoBehaviour:
   skillId: player_basic_melee
   displayName: Basic Melee Attack
   skillType: 0
-  attackPower: 8
+  attackPower: 1
   manaCost: 0
-  cooldownSeconds: 0.45
+  cooldownSeconds: 2
   range: 0.75
   hitboxSize: {x: 1.1, y: 0.85}
-  projectileSpeed: 8
-  projectileLifetime: 1.5
+  projectileSpeed: 0
+  projectileLifetime: 0
