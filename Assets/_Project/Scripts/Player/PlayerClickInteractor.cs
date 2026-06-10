@@ -11,9 +11,11 @@ namespace IdleonGame.Player
         [SerializeField] private PlayerAttack attack;
         [SerializeField] private PlayerAutoNavigator autoNavigator;
         [SerializeField] private PlayerInventory inventory;
+        [SerializeField] private KeyCode autoHuntKey = KeyCode.L;
 
         private readonly Collider2D[] clickResults = new Collider2D[16];
         private Damageable pendingAttackTarget;
+        private bool isAutoHunting;
 
         private void Awake()
         {
@@ -22,6 +24,16 @@ namespace IdleonGame.Player
 
         private void Update()
         {
+            if (UnityEngine.Input.GetKeyDown(autoHuntKey))
+            {
+                ToggleAutoHunt();
+            }
+
+            if (isAutoHunting && pendingAttackTarget == null)
+            {
+                pendingAttackTarget = FindNearestMonster();
+            }
+
             if (pendingAttackTarget != null)
             {
                 UpdatePendingAttack();
@@ -107,6 +119,16 @@ namespace IdleonGame.Player
             attack.TryUseRangedAttack(pendingAttackTarget);
         }
 
+        private void ToggleAutoHunt()
+        {
+            isAutoHunting = !isAutoHunting;
+            if (!isAutoHunting)
+            {
+                pendingAttackTarget = null;
+                autoNavigator?.StopNavigation();
+            }
+        }
+
         private Damageable FindClickedMonster(int hitCount, Vector2 clickPoint)
         {
             Damageable bestTarget = null;
@@ -163,6 +185,30 @@ namespace IdleonGame.Player
             }
 
             return bestItem;
+        }
+
+        private Damageable FindNearestMonster()
+        {
+            Damageable nearest = null;
+            var nearestDistance = float.PositiveInfinity;
+            var behaviours = FindObjectsOfType<MonoBehaviour>();
+            foreach (var behaviour in behaviours)
+            {
+                var damageable = behaviour as Damageable;
+                if (damageable == null || damageable.IsDead)
+                {
+                    continue;
+                }
+
+                var distance = Vector2.Distance(transform.position, behaviour.transform.position);
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearest = damageable;
+                }
+            }
+
+            return nearest;
         }
 
         private void FindReferences()
