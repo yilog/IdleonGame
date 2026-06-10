@@ -1,6 +1,7 @@
 using IdleonGame.Character;
 using IdleonGame.Combat;
 using IdleonGame.Core;
+using IdleonGame.Items;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -116,6 +117,15 @@ namespace IdleonGame.Monster
             {
                 monsterCollider.enabled = false;
             }
+
+            WorldItemDropper.SpawnRandomDrops(
+                definition != null ? definition.Drops : null,
+                transform.position,
+                drop => drop.ItemId,
+                drop => drop.MinCount,
+                drop => drop.MaxCount,
+                drop => drop.DropChance,
+                name);
 
             var spriteRenderer = GetComponent<SpriteRenderer>();
             if (spriteRenderer != null)

@@ -33,6 +33,10 @@ MonoBehaviour:
     objectName: Tilemap_Collision
     sortingOrder: 20
     hasCollider: 0
+  - layerType: 6
+    objectName: Tilemap_MonsterSpawn
+    sortingOrder: 30
+    hasCollider: 0
   spawnPoints:
   - spawnPointId: default
     position: {x: -8, y: -1.75}

@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.IO;
 using IdleonGame.Character;
+using IdleonGame.Core;
 using IdleonGame.Monster;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -22,7 +23,8 @@ namespace IdleonGame.Editor
             Directory.CreateDirectory("Assets/_Project/Art/Monsters");
             Directory.CreateDirectory("Assets/_Project/ScriptableObjects/Monsters");
 
-            var definition = CreateMonsterDefinition();
+            var monsterSprite = CreateMonsterSprite();
+            var definition = CreateMonsterDefinition(monsterSprite);
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
 
             var existing = GameObject.Find("Monster_TestWalker");
@@ -43,8 +45,8 @@ namespace IdleonGame.Editor
             monster.transform.position = new Vector3(-4f, -1.5f, 0f);
 
             var spriteRenderer = monster.AddComponent<SpriteRenderer>();
-            spriteRenderer.sprite = CreateMonsterSprite();
-            spriteRenderer.sortingOrder = 45;
+            spriteRenderer.sprite = monsterSprite;
+            spriteRenderer.sortingOrder = GameRenderLayers.SortingOrders.Monster;
 
             var body = monster.AddComponent<Rigidbody2D>();
             body.bodyType = RigidbodyType2D.Dynamic;
@@ -66,7 +68,7 @@ namespace IdleonGame.Editor
             AssetDatabase.Refresh();
         }
 
-        private static MonsterDefinition CreateMonsterDefinition()
+        private static MonsterDefinition CreateMonsterDefinition(Sprite monsterSprite)
         {
             var definition = AssetDatabase.LoadAssetAtPath<MonsterDefinition>(MonsterDefinitionPath);
             if (definition == null)
@@ -78,6 +80,7 @@ namespace IdleonGame.Editor
             definition.EditorSetData(
                 "test_walker",
                 "Test Walker",
+                monsterSprite,
                 Vector2Int.one,
                 20,
                 0,
@@ -86,7 +89,8 @@ namespace IdleonGame.Editor
                 MonsterAttackType.None,
                 1.25f,
                 false,
-                2f);
+                2f,
+                System.Array.Empty<MonsterDropEntry>());
 
             EditorUtility.SetDirty(definition);
             return definition;

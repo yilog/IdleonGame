@@ -1,7 +1,9 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
 using System.IO;
+using IdleonGame.Core;
 using IdleonGame.Map;
+using IdleonGame.Monster;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -16,6 +18,8 @@ namespace IdleonGame.Editor
         private const string ScenePath = "Assets/_Project/Scenes/Maps/Test_Battle_Tilemap.unity";
         private const string TileTexturePath = "Assets/_Project/Tilemaps/Tiles/TestGroundTile.png";
         private const string TileAssetPath = "Assets/_Project/Tilemaps/Tiles/TestGroundTile.asset";
+        private const string MonsterSpawnTexturePath = "Assets/_Project/Tilemaps/Tiles/TestMonsterSpawnTile.png";
+        private const string MonsterSpawnTileAssetPath = "Assets/_Project/Tilemaps/Tiles/TestMonsterSpawnTile.asset";
         private const string MapDefinitionPath = "Assets/_Project/ScriptableObjects/Maps/TestBattleMap.asset";
 
         static CreateTestBattleTilemapScene()
@@ -31,6 +35,7 @@ namespace IdleonGame.Editor
             Directory.CreateDirectory("Assets/_Project/ScriptableObjects/Maps");
 
             var groundTile = CreateGroundTile();
+            var monsterSpawnTile = CreateMonsterSpawnTile();
             var mapDefinition = CreateMapDefinition();
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -51,14 +56,18 @@ namespace IdleonGame.Editor
 
             var layers = new List<MapTilemapLayer>
             {
-                CreateLayer(gridObject.transform, "Tilemap_Background", TilemapLayerType.Background, -10, false),
-                CreateLayer(gridObject.transform, "Tilemap_Ground", TilemapLayerType.Ground, 0, true),
-                CreateLayer(gridObject.transform, "Tilemap_Decoration", TilemapLayerType.Decoration, 10, false),
-                CreateLayer(gridObject.transform, "Tilemap_Collision", TilemapLayerType.Collision, 20, false)
+                CreateLayer(gridObject.transform, "Tilemap_Background", TilemapLayerType.Background, GameRenderLayers.SortingOrders.TilemapBackground, false),
+                CreateLayer(gridObject.transform, "Tilemap_Ground", TilemapLayerType.Ground, GameRenderLayers.SortingOrders.TilemapGround, true),
+                CreateLayer(gridObject.transform, "Tilemap_Decoration", TilemapLayerType.Decoration, GameRenderLayers.SortingOrders.TilemapDecoration, false),
+                CreateLayer(gridObject.transform, "Tilemap_Collision", TilemapLayerType.Collision, GameRenderLayers.SortingOrders.TilemapCollision, false),
+                CreateLayer(gridObject.transform, "Tilemap_MonsterSpawn", TilemapLayerType.MonsterSpawn, GameRenderLayers.SortingOrders.TilemapMonsterSpawn, false)
             };
 
             var groundLayer = layers.Find(layer => layer.LayerType == TilemapLayerType.Ground);
+            var monsterSpawnLayer = layers.Find(layer => layer.LayerType == TilemapLayerType.MonsterSpawn);
             PaintFlatGround(groundLayer.Tilemap, groundTile);
+            PaintMonsterSpawnPoint(monsterSpawnLayer.Tilemap, monsterSpawnTile);
+            monsterSpawnLayer.gameObject.AddComponent<MonsterSpawnTilemap>().Configure(groundLayer.Tilemap);
             controller.EditorConfigure(mapDefinition, new BoundsInt(-10, -3, 0, 21, 8, 1), layers);
 
             EditorSceneManager.MarkSceneDirty(scene);
@@ -125,6 +134,52 @@ namespace IdleonGame.Editor
             return tile;
         }
 
+        private static MonsterSpawnTile CreateMonsterSpawnTile()
+        {
+            if (!File.Exists(MonsterSpawnTexturePath))
+            {
+                var texture = new Texture2D(16, 16, TextureFormat.RGBA32, false);
+                for (var y = 0; y < texture.height; y++)
+                {
+                    for (var x = 0; x < texture.width; x++)
+                    {
+                        var border = x == 0 || y == 0 || x == texture.width - 1 || y == texture.height - 1;
+                        var cross = x == 7 || x == 8 || y == 7 || y == 8;
+                        var color = border
+                            ? new Color32(70, 44, 88, 255)
+                            : cross ? new Color32(255, 210, 84, 255) : new Color32(160, 82, 190, 180);
+                        texture.SetPixel(x, y, color);
+                    }
+                }
+
+                texture.Apply();
+                File.WriteAllBytes(MonsterSpawnTexturePath, texture.EncodeToPNG());
+                AssetDatabase.ImportAsset(MonsterSpawnTexturePath);
+            }
+
+            var importer = AssetImporter.GetAtPath(MonsterSpawnTexturePath) as TextureImporter;
+            if (importer != null)
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spritePixelsPerUnit = 16;
+                importer.filterMode = FilterMode.Point;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.SaveAndReimport();
+            }
+
+            var tile = AssetDatabase.LoadAssetAtPath<MonsterSpawnTile>(MonsterSpawnTileAssetPath);
+            if (tile == null)
+            {
+                tile = ScriptableObject.CreateInstance<MonsterSpawnTile>();
+                tile.name = "TestMonsterSpawnTile";
+                AssetDatabase.CreateAsset(tile, MonsterSpawnTileAssetPath);
+            }
+
+            tile.EditorSetData("test_walker", 5f, 10, 0.5f, AssetDatabase.LoadAssetAtPath<Sprite>(MonsterSpawnTexturePath));
+            EditorUtility.SetDirty(tile);
+            return tile;
+        }
+
         private static MapSceneDefinition CreateMapDefinition()
         {
             var mapDefinition = AssetDatabase.LoadAssetAtPath<MapSceneDefinition>(MapDefinitionPath);
@@ -141,10 +196,11 @@ namespace IdleonGame.Editor
                 new Vector2Int(21, 8),
                 new List<MapTilemapLayerDefinition>
                 {
-                    new MapTilemapLayerDefinition { layerType = TilemapLayerType.Background, objectName = "Tilemap_Background", sortingOrder = -10, hasCollider = false },
-                    new MapTilemapLayerDefinition { layerType = TilemapLayerType.Ground, objectName = "Tilemap_Ground", sortingOrder = 0, hasCollider = true },
-                    new MapTilemapLayerDefinition { layerType = TilemapLayerType.Decoration, objectName = "Tilemap_Decoration", sortingOrder = 10, hasCollider = false },
-                    new MapTilemapLayerDefinition { layerType = TilemapLayerType.Collision, objectName = "Tilemap_Collision", sortingOrder = 20, hasCollider = false }
+                    new MapTilemapLayerDefinition { layerType = TilemapLayerType.Background, objectName = "Tilemap_Background", sortingOrder = GameRenderLayers.SortingOrders.TilemapBackground, hasCollider = false },
+                    new MapTilemapLayerDefinition { layerType = TilemapLayerType.Ground, objectName = "Tilemap_Ground", sortingOrder = GameRenderLayers.SortingOrders.TilemapGround, hasCollider = true },
+                    new MapTilemapLayerDefinition { layerType = TilemapLayerType.Decoration, objectName = "Tilemap_Decoration", sortingOrder = GameRenderLayers.SortingOrders.TilemapDecoration, hasCollider = false },
+                    new MapTilemapLayerDefinition { layerType = TilemapLayerType.Collision, objectName = "Tilemap_Collision", sortingOrder = GameRenderLayers.SortingOrders.TilemapCollision, hasCollider = false },
+                    new MapTilemapLayerDefinition { layerType = TilemapLayerType.MonsterSpawn, objectName = "Tilemap_MonsterSpawn", sortingOrder = GameRenderLayers.SortingOrders.TilemapMonsterSpawn, hasCollider = false }
                 },
                 new List<MapSpawnPointData>
                 {
@@ -187,6 +243,12 @@ namespace IdleonGame.Editor
             }
 
             groundTilemap.CompressBounds();
+        }
+
+        private static void PaintMonsterSpawnPoint(Tilemap spawnTilemap, TileBase spawnTile)
+        {
+            spawnTilemap.SetTile(new Vector3Int(-4, -2, 0), spawnTile);
+            spawnTilemap.CompressBounds();
         }
 
         private static void CreateCamera()

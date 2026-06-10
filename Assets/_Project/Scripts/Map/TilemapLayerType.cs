@@ -7,6 +7,7 @@ namespace IdleonGame.Map
         Platform,
         Decoration,
         Collision,
-        Rope
+        Rope,
+        MonsterSpawn
     }
 }

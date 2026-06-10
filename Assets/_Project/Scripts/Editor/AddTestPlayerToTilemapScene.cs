@@ -1,6 +1,8 @@
 #if UNITY_EDITOR
 using System.IO;
 using IdleonGame.Character;
+using IdleonGame.Core;
+using IdleonGame.Items;
 using IdleonGame.Player;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -31,7 +33,7 @@ namespace IdleonGame.Editor
 
             var spriteRenderer = player.AddComponent<SpriteRenderer>();
             spriteRenderer.sprite = CreatePlayerSprite();
-            spriteRenderer.sortingOrder = 50;
+            spriteRenderer.sortingOrder = GameRenderLayers.SortingOrders.Player;
 
             var body = player.AddComponent<Rigidbody2D>();
             body.bodyType = RigidbodyType2D.Dynamic;
@@ -44,6 +46,7 @@ namespace IdleonGame.Editor
             collider.size = new Vector2(0.9f, 0.95f);
 
             player.AddComponent<CharacterStats>().Configure(100, 50, 6, 1);
+            player.AddComponent<PlayerInventory>();
             player.AddComponent<PlayerClimb>();
             player.AddComponent<PlayerMovement>();
             player.AddComponent<PlayerAutoNavigator>();
