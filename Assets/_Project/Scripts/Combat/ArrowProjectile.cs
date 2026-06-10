@@ -13,6 +13,7 @@ namespace IdleonGame.Combat
         private CharacterStats ownerStats;
         private GameObject owner;
         private LayerMask targetLayers;
+        private Damageable lockedTarget;
         private int direction = 1;
         private static Sprite cachedArrowSprite;
 
@@ -21,12 +22,14 @@ namespace IdleonGame.Combat
             CharacterStats attackerStats,
             AttackDefinition attackDefinition,
             int facingDirection,
-            LayerMask targets)
+            LayerMask targets,
+            Damageable target = null)
         {
             owner = projectileOwner;
             ownerStats = attackerStats;
             attack = attackDefinition;
             targetLayers = targets;
+            lockedTarget = target;
             direction = facingDirection >= 0 ? 1 : -1;
 
             ConfigureComponents();
@@ -65,6 +68,11 @@ namespace IdleonGame.Combat
 
             var damageable = other.GetComponentInParent<Damageable>();
             if (damageable == null || damageable.IsDead)
+            {
+                return;
+            }
+
+            if (lockedTarget != null && !ReferenceEquals(damageable, lockedTarget))
             {
                 return;
             }

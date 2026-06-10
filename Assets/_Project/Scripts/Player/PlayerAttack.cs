@@ -115,9 +115,44 @@ namespace IdleonGame.Player
             return false;
         }
 
+        public bool IsBasicAttackReady()
+        {
+            return basicAttack != null
+                && stats != null
+                && !stats.IsDead
+                && Time.time >= nextBasicAttackTime;
+        }
+
+        public bool IsTargetInRangedAttackRange(Damageable target)
+        {
+            if (rangedAttack == null || target == null || target.IsDead)
+            {
+                return false;
+            }
+
+            var targetTransform = (target as Component)?.transform;
+            if (targetTransform == null)
+            {
+                return false;
+            }
+
+            var delta = targetTransform.position - transform.position;
+            var maxDistance = rangedAttack.ProjectileSpeed * rangedAttack.ProjectileLifetime;
+            var verticalTolerance = Mathf.Max(0.75f, rangedAttack.HitboxSize.y * 2f);
+            return Mathf.Abs(delta.x) <= maxDistance && Mathf.Abs(delta.y) <= verticalTolerance;
+        }
+
+        public bool IsRangedAttackReady()
+        {
+            return rangedAttack != null
+                && stats != null
+                && !stats.IsDead
+                && Time.time >= nextRangedAttackTime;
+        }
+
         public bool TryUseBasicAttack(Damageable preferredTarget = null)
         {
-            if (basicAttack == null || stats == null || Time.time < nextBasicAttackTime || stats.IsDead)
+            if (!IsBasicAttackReady())
             {
                 return false;
             }
@@ -140,30 +175,40 @@ namespace IdleonGame.Player
             return ExecuteMeleeHit(preferredTarget);
         }
 
-        private void TryUseRangedAttack()
+        public bool TryUseRangedAttack(Damageable preferredTarget = null)
         {
-            if (rangedAttack == null || stats == null || Time.time < nextRangedAttackTime || stats.IsDead)
+            if (!IsRangedAttackReady())
             {
-                return;
+                return false;
+            }
+
+            if (preferredTarget != null)
+            {
+                FaceTarget(preferredTarget);
+                if (!IsTargetInRangedAttackRange(preferredTarget))
+                {
+                    return false;
+                }
             }
 
             if (!stats.SpendMana(rangedAttack.ManaCost))
             {
-                return;
+                return false;
             }
 
             nextRangedAttackTime = Time.time + rangedAttack.CooldownSeconds;
-            FireArrow();
+            FireArrow(preferredTarget);
+            return true;
         }
 
-        private void FireArrow()
+        private void FireArrow(Damageable preferredTarget = null)
         {
             var arrowObject = new GameObject("Projectile_Arrow");
             arrowObject.transform.position = transform.position + Vector3.right * facingDirection * 0.55f;
             arrowObject.AddComponent<SpriteRenderer>();
             arrowObject.AddComponent<Rigidbody2D>();
             arrowObject.AddComponent<BoxCollider2D>();
-            arrowObject.AddComponent<ArrowProjectile>().Launch(gameObject, stats, rangedAttack, facingDirection, targetLayers);
+            arrowObject.AddComponent<ArrowProjectile>().Launch(gameObject, stats, rangedAttack, facingDirection, targetLayers, preferredTarget);
         }
 
         private bool ExecuteMeleeHit(Damageable preferredTarget = null)

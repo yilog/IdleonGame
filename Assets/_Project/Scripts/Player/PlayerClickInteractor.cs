@@ -67,9 +67,8 @@ namespace IdleonGame.Player
         private void HandleMonsterClick(Damageable monster)
         {
             pendingAttackTarget = monster;
-            if (attack != null && attack.TryUseBasicAttack(monster))
+            if (attack != null && attack.TryUseRangedAttack(monster))
             {
-                pendingAttackTarget = null;
                 return;
             }
 
@@ -88,16 +87,24 @@ namespace IdleonGame.Player
                 return;
             }
 
-            if (attack == null || !attack.IsTargetInBasicAttackRange(pendingAttackTarget))
+            if (attack == null || !attack.IsRangedAttackReady())
             {
                 return;
             }
 
-            autoNavigator?.StopNavigation();
-            if (attack.TryUseBasicAttack(pendingAttackTarget))
+            if (!attack.IsTargetInRangedAttackRange(pendingAttackTarget))
             {
-                pendingAttackTarget = null;
+                var targetTransform = (pendingAttackTarget as Component)?.transform;
+                if (targetTransform != null)
+                {
+                    autoNavigator?.TryNavigateToWorldPosition(targetTransform.position);
+                }
+
+                return;
             }
+
+            autoNavigator?.StopNavigation();
+            attack.TryUseRangedAttack(pendingAttackTarget);
         }
 
         private Damageable FindClickedMonster(int hitCount, Vector2 clickPoint)
