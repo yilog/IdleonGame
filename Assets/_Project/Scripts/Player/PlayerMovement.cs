@@ -1,3 +1,4 @@
+using IdleonGame.Character;
 using UnityEngine;
 
 namespace IdleonGame.Player
@@ -102,8 +103,8 @@ namespace IdleonGame.Player
 
             if (bodyCollider != null)
             {
-                bodyCollider.size = new Vector2(0.9f, 0.95f);
-                bodyCollider.offset = Vector2.zero;
+                bodyCollider.size = CharacterAnchor2D.PlayerColliderSize;
+                bodyCollider.offset = CharacterAnchor2D.PlayerColliderOffset;
             }
         }
     }

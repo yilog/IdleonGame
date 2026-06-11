@@ -157,6 +157,7 @@ namespace IdleonGame.Editor
             {
                 importer.textureType = TextureImporterType.Sprite;
                 importer.spritePixelsPerUnit = 16;
+                importer.spritePivot = CharacterAnchor2D.BottomCenterPivot;
                 importer.filterMode = FilterMode.Point;
                 importer.textureCompression = TextureImporterCompression.Uncompressed;
                 importer.SaveAndReimport();
@@ -242,6 +243,7 @@ namespace IdleonGame.Editor
             {
                 importer.textureType = TextureImporterType.Sprite;
                 importer.spritePixelsPerUnit = 16;
+                importer.spritePivot = CharacterAnchor2D.BottomCenterPivot;
                 importer.filterMode = FilterMode.Point;
                 importer.textureCompression = TextureImporterCompression.Uncompressed;
                 importer.SaveAndReimport();
@@ -330,6 +332,13 @@ namespace IdleonGame.Editor
             }
 
             stats.Configure(20, 0, 0, 0);
+
+            var bodyCollider = monster.GetComponent<BoxCollider2D>();
+            if (bodyCollider != null)
+            {
+                bodyCollider.size = CharacterAnchor2D.MonsterColliderSize;
+                bodyCollider.offset = CharacterAnchor2D.MonsterColliderOffset;
+            }
 
             var controller = monster.GetComponent<MonsterController>();
             if (controller != null && definition != null)

@@ -10,7 +10,7 @@ namespace IdleonGame.Levels
         [SerializeField] private string sceneName;
         [SerializeField] private string scenePath;
         [SerializeField] private string defaultSpawnPointId = "default";
-        [SerializeField] private Vector2 defaultSpawnPosition = new(-8f, -1.5f);
+        [SerializeField] private Vector2 defaultSpawnPosition = new(-8f, -2f);
 
         public string LevelId => levelId;
         public string DisplayName => displayName;

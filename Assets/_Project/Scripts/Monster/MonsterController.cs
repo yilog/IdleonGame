@@ -212,8 +212,8 @@ namespace IdleonGame.Monster
 
             if (bodyCollider != null)
             {
-                bodyCollider.size = new Vector2(0.9f, 0.9f);
-                bodyCollider.offset = Vector2.zero;
+                bodyCollider.size = CharacterAnchor2D.MonsterColliderSize;
+                bodyCollider.offset = CharacterAnchor2D.MonsterColliderOffset;
             }
         }
 

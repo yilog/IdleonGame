@@ -67,8 +67,14 @@ namespace IdleonGame.Monster
                     continue;
                 }
 
-                spawnPoints.Add(new RuntimeSpawnPoint(spawnTile, spawnTilemap.GetCellCenterWorld(cell)));
+                spawnPoints.Add(new RuntimeSpawnPoint(spawnTile, GetCharacterAnchorWorldPosition(cell)));
             }
+        }
+
+        private Vector3 GetCharacterAnchorWorldPosition(Vector3Int cell)
+        {
+            var center = spawnTilemap.GetCellCenterWorld(cell);
+            return center + Vector3.down * (spawnTilemap.layoutGrid.cellSize.y * 0.5f);
         }
 
         private void SpawnInitialMonsters()

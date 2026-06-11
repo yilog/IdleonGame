@@ -40,8 +40,8 @@ namespace IdleonGame.Editor
             EnsureFolders();
             EnsureLayers();
 
-            var level1 = CreateLevel("level1_1", "Level 1-1", new Vector2(-8f, -1.75f), 0);
-            var level2 = CreateLevel("level1_2", "Level 1-2", new Vector2(-8f, -1.75f), 1);
+            var level1 = CreateLevel("level1_1", "Level 1-1", new Vector2(-8f, -2f), 0);
+            var level2 = CreateLevel("level1_2", "Level 1-2", new Vector2(-8f, -2f), 1);
             CreateLevelDatabase(level1, level2);
             CreateBattleScene();
             SyncBuildSettings();
@@ -398,7 +398,7 @@ namespace IdleonGame.Editor
             var serialized = new SerializedObject(battleController);
             serialized.FindProperty("basicAttack").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AttackDefinition>(BasicAttackPath);
             serialized.FindProperty("rangedAttack").objectReferenceValue = AssetDatabase.LoadAssetAtPath<AttackDefinition>(ArrowAttackPath);
-            serialized.FindProperty("initialPlayerPosition").vector2Value = new Vector2(-8f, -1.75f);
+            serialized.FindProperty("initialPlayerPosition").vector2Value = new Vector2(-8f, -2f);
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 

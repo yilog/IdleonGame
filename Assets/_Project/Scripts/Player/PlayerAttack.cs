@@ -9,21 +9,28 @@ namespace IdleonGame.Player
     [RequireComponent(typeof(CharacterStats))]
     public sealed class PlayerAttack : MonoBehaviour
     {
+        private const string DefaultArrowPrefabPath = "Prefabs/Projectiles/Arrow";
+
         [SerializeField] private AttackDefinition basicAttack;
         [SerializeField] private AttackDefinition rangedAttack;
         [SerializeField] private CharacterStats stats;
+        [SerializeField] private PlayerAnimator playerAnimator;
         [SerializeField] private LayerMask targetLayers;
         [SerializeField] private KeyCode basicAttackKey = KeyCode.J;
         [SerializeField] private KeyCode rangedAttackKey = KeyCode.K;
+        [SerializeField] private Vector3 offsetArrow = new(0, 0.5f, 0);
+        [SerializeField] private string arrowPrefabPath = DefaultArrowPrefabPath;
 
         private readonly Collider2D[] hitResults = new Collider2D[8];
         private float nextBasicAttackTime;
         private float nextRangedAttackTime;
         private int facingDirection = 1;
+        private GameObject arrowPrefab;
 
         private void Reset()
         {
             stats = GetComponent<CharacterStats>();
+            playerAnimator = GetComponent<PlayerAnimator>();
             targetLayers = LayerMask.GetMask(GameLayerNames.Monster);
         }
 
@@ -34,10 +41,22 @@ namespace IdleonGame.Player
                 stats = GetComponent<CharacterStats>();
             }
 
+            if (playerAnimator == null)
+            {
+                playerAnimator = GetComponent<PlayerAnimator>();
+            }
+
             if (targetLayers.value == 0)
             {
                 targetLayers = LayerMask.GetMask(GameLayerNames.Monster);
             }
+
+            if (string.IsNullOrWhiteSpace(arrowPrefabPath))
+            {
+                arrowPrefabPath = DefaultArrowPrefabPath;
+            }
+
+            arrowPrefab = Resources.Load<GameObject>(arrowPrefabPath);
 
             var playerLayer = LayerMask.NameToLayer(GameLayerNames.Player);
             var monsterLayer = LayerMask.NameToLayer(GameLayerNames.Monster);
@@ -65,6 +84,7 @@ namespace IdleonGame.Player
             if (Mathf.Abs(horizontal) > 0.1f)
             {
                 facingDirection = horizontal > 0f ? 1 : -1;
+                playerAnimator?.SetFacingDirection(horizontal);
             }
         }
 
@@ -172,6 +192,7 @@ namespace IdleonGame.Player
             }
 
             nextBasicAttackTime = Time.time + basicAttack.CooldownSeconds;
+            playerAnimator?.PlayAttack();
             return ExecuteMeleeHit(preferredTarget);
         }
 
@@ -197,18 +218,36 @@ namespace IdleonGame.Player
             }
 
             nextRangedAttackTime = Time.time + rangedAttack.CooldownSeconds;
+            playerAnimator?.PlayAttack();
             FireArrow(preferredTarget);
             return true;
         }
 
         private void FireArrow(Damageable preferredTarget = null)
         {
-            var arrowObject = new GameObject("Projectile_Arrow");
-            arrowObject.transform.position = transform.position + Vector3.right * facingDirection * 0.55f;
-            arrowObject.AddComponent<SpriteRenderer>();
-            arrowObject.AddComponent<Rigidbody2D>();
-            arrowObject.AddComponent<BoxCollider2D>();
-            arrowObject.AddComponent<ArrowProjectile>().Launch(gameObject, stats, rangedAttack, facingDirection, targetLayers, preferredTarget);
+            if (arrowPrefab == null)
+            {
+                arrowPrefab = Resources.Load<GameObject>(arrowPrefabPath);
+            }
+
+            if (arrowPrefab == null)
+            {
+                Debug.LogError($"Arrow prefab was not found in Resources: {arrowPrefabPath}");
+                return;
+            }
+
+            var arrowObject = Instantiate(arrowPrefab);
+            arrowObject.name = "Projectile_Arrow";
+            arrowObject.transform.position = transform.position + offsetArrow + Vector3.right * facingDirection * 0.55f;
+            EnsureComponent<Rigidbody2D>(arrowObject);
+            EnsureComponent<BoxCollider2D>(arrowObject);
+            EnsureComponent<ArrowProjectile>(arrowObject).Launch(gameObject, stats, rangedAttack, facingDirection, targetLayers, preferredTarget);
+        }
+
+        private static T EnsureComponent<T>(GameObject target) where T : Component
+        {
+            var component = target.GetComponent<T>();
+            return component != null ? component : target.AddComponent<T>();
         }
 
         private bool ExecuteMeleeHit(Damageable preferredTarget = null)

@@ -19,7 +19,7 @@ namespace IdleonGame.Map
         public string TargetLevelId => targetLevelId;
         public string TargetSpawnPointId => targetSpawnPointId;
         public bool IsActive => isActive;
-        public Vector3 WorldPosition => transform.position;
+        public Vector3 WorldPosition => GetCharacterAnchorWorldPosition();
         public Vector3Int PortalCell => portalCell;
 
         public void Configure(
@@ -48,6 +48,17 @@ namespace IdleonGame.Map
             var cell = portalTilemap.WorldToCell(worldPosition);
             cell.z = portalCell.z;
             return cell == portalCell;
+        }
+
+        private Vector3 GetCharacterAnchorWorldPosition()
+        {
+            if (portalTilemap == null)
+            {
+                return transform.position;
+            }
+
+            var center = portalTilemap.GetCellCenterWorld(portalCell);
+            return center + Vector3.down * (portalTilemap.layoutGrid.cellSize.y * 0.5f);
         }
 
         public bool TryActivate()

@@ -15,6 +15,7 @@ namespace IdleonGame.Editor
     {
         private const string ScenePath = "Assets/_Project/Scenes/Maps/Test_Battle_Tilemap.unity";
         private const string PlayerTexturePath = "Assets/_Project/Art/Characters/TestPlayerBlock.png";
+        private const string AnimatorControllerPath = "Assets/_Project/Resources/Animations/Archer/Archer.controller";
 
         [MenuItem("IdleonGame/Setup/Add Test Player To Tilemap Scene")]
         public static void AddPlayer()
@@ -29,11 +30,13 @@ namespace IdleonGame.Editor
             }
 
             var player = new GameObject("Player_TestBlock");
-            player.transform.position = new Vector3(-8f, -1.5f, 0f);
+            player.transform.position = new Vector3(-8f, -2f, 0f);
 
             var spriteRenderer = player.AddComponent<SpriteRenderer>();
             spriteRenderer.sprite = CreatePlayerSprite();
             spriteRenderer.sortingOrder = GameRenderLayers.SortingOrders.Player;
+            var animator = player.AddComponent<Animator>();
+            animator.runtimeAnimatorController = AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(AnimatorControllerPath);
 
             var body = player.AddComponent<Rigidbody2D>();
             body.bodyType = RigidbodyType2D.Dynamic;
@@ -43,13 +46,15 @@ namespace IdleonGame.Editor
             body.interpolation = RigidbodyInterpolation2D.Interpolate;
 
             var collider = player.AddComponent<BoxCollider2D>();
-            collider.size = new Vector2(0.9f, 0.95f);
+            collider.size = CharacterAnchor2D.PlayerColliderSize;
+            collider.offset = CharacterAnchor2D.PlayerColliderOffset;
 
             player.AddComponent<CharacterStats>().Configure(100, 50, 6, 1);
             player.AddComponent<PlayerInventory>();
             player.AddComponent<PlayerClimb>();
             player.AddComponent<PlayerMovement>();
             player.AddComponent<PlayerAutoNavigator>();
+            player.AddComponent<PlayerAnimator>();
             player.AddComponent<PlayerAttack>();
             player.AddComponent<PlayerClickInteractor>();
             player.AddComponent<PlayerController>();
@@ -84,6 +89,7 @@ namespace IdleonGame.Editor
             {
                 importer.textureType = TextureImporterType.Sprite;
                 importer.spritePixelsPerUnit = 16;
+                importer.spritePivot = CharacterAnchor2D.BottomCenterPivot;
                 importer.filterMode = FilterMode.Point;
                 importer.textureCompression = TextureImporterCompression.Uncompressed;
                 importer.SaveAndReimport();

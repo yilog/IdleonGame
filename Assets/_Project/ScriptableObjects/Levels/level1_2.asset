@@ -17,4 +17,4 @@ MonoBehaviour:
   sceneName: level1_2
   scenePath: Assets/_Project/Scenes/Levels/level1_2.unity
   defaultSpawnPointId: default
-  defaultSpawnPosition: {x: -8, y: -1.75}
+  defaultSpawnPosition: {x: -8, y: -2}

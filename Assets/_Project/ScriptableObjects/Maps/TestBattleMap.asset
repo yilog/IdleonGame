@@ -39,5 +39,5 @@ MonoBehaviour:
     hasCollider: 0
   spawnPoints:
   - spawnPointId: default
-    position: {x: -8, y: -1.75}
+    position: {x: -8, y: -2}
   portals: []

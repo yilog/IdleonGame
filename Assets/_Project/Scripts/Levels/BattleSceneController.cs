@@ -11,10 +11,12 @@ namespace IdleonGame.Levels
     public sealed class BattleSceneController : MonoBehaviour
     {
         private const string PlayerObjectName = "Player_TestBlock";
+        private const string PlayerAnimatorControllerPath = "Animations/Archer/Archer";
+        private const string PlayerPrefabPath = "Prefabs/Characters/Archer";
 
         [SerializeField] private AttackDefinition basicAttack;
         [SerializeField] private AttackDefinition rangedAttack;
-        [SerializeField] private Vector2 initialPlayerPosition = new(-8f, -1.5f);
+        [SerializeField] private Vector2 initialPlayerPosition = new(-8f, -2f);
 
         private GameObject player;
         private Sprite runtimePlayerSprite;
@@ -61,37 +63,94 @@ namespace IdleonGame.Levels
 
         private GameObject CreatePlayer(Vector2 position)
         {
-            var created = new GameObject(PlayerObjectName);
+            var created = CreatePlayerRoot();
+            created.name = PlayerObjectName;
             created.transform.position = new Vector3(position.x, position.y, 0f);
 
-            var spriteRenderer = created.AddComponent<SpriteRenderer>();
-            spriteRenderer.sprite = GetOrCreateRuntimePlayerSprite();
-            spriteRenderer.sortingOrder = GameRenderLayers.SortingOrders.Player;
+            var body = created.GetComponent<Rigidbody2D>();
+            if (body == null)
+            {
+                body = created.AddComponent<Rigidbody2D>();
+            }
 
-            var body = created.AddComponent<Rigidbody2D>();
             body.bodyType = RigidbodyType2D.Dynamic;
             body.gravityScale = 3f;
             body.freezeRotation = true;
             body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
             body.interpolation = RigidbodyInterpolation2D.Interpolate;
 
-            var collider = created.AddComponent<BoxCollider2D>();
-            collider.size = new Vector2(0.9f, 0.95f);
+            var collider = created.GetComponent<BoxCollider2D>();
+            if (collider == null)
+            {
+                collider = created.AddComponent<BoxCollider2D>();
+            }
 
-            created.AddComponent<CharacterStats>();
-            created.AddComponent<PlayerInventory>();
-            created.AddComponent<PlayerClimb>();
-            created.AddComponent<PlayerMovement>();
-            created.AddComponent<PlayerAutoNavigator>();
-            created.AddComponent<PlayerAttack>();
-            created.AddComponent<PlayerClickInteractor>();
-            created.AddComponent<PlayerController>();
+            collider.size = CharacterAnchor2D.PlayerColliderSize;
+            collider.offset = CharacterAnchor2D.PlayerColliderOffset;
+
+            EnsurePresentationComponents(created);
+
+            EnsureComponent<CharacterStats>(created);
+            EnsureComponent<PlayerInventory>(created);
+            EnsureComponent<PlayerClimb>(created);
+            EnsureComponent<PlayerMovement>(created);
+            EnsureComponent<PlayerAutoNavigator>(created);
+            EnsureComponent<PlayerAttack>(created);
+            EnsureComponent<PlayerClickInteractor>(created);
+            EnsureComponent<PlayerController>(created);
 
             return created;
         }
 
+        private GameObject CreatePlayerRoot()
+        {
+            var prefab = Resources.Load<GameObject>(PlayerPrefabPath);
+            if (prefab != null)
+            {
+                return Instantiate(prefab);
+            }
+
+            Debug.LogWarning($"Player prefab was not found in Resources: {PlayerPrefabPath}");
+            return new GameObject(PlayerObjectName);
+        }
+
+        private void EnsurePresentationComponents(GameObject target)
+        {
+            var spriteRenderer = target.GetComponentInChildren<SpriteRenderer>();
+            if (spriteRenderer == null)
+            {
+                spriteRenderer = target.AddComponent<SpriteRenderer>();
+                spriteRenderer.sprite = GetOrCreateRuntimePlayerSprite();
+            }
+
+            //spriteRenderer.transform.localPosition = Vector3.zero;
+            //spriteRenderer.transform.localScale = Vector3.one;
+            spriteRenderer.sortingOrder = GameRenderLayers.SortingOrders.Player;
+
+            var animator = target.GetComponent<Animator>();
+            if (animator == null)
+            {
+                animator = target.AddComponent<Animator>();
+            }
+
+            if (animator.runtimeAnimatorController == null)
+            {
+                animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>(PlayerAnimatorControllerPath);
+            }
+
+            EnsureComponent<PlayerAnimator>(target);
+        }
+
+        private static T EnsureComponent<T>(GameObject target) where T : Component
+        {
+            var component = target.GetComponent<T>();
+            return component != null ? component : target.AddComponent<T>();
+        }
+
         private void ConfigurePlayer(GameObject target)
         {
+            EnsurePresentationComponents(target);
+
             var playerLayer = LayerMask.NameToLayer(GameLayerNames.Player);
             if (playerLayer >= 0)
             {
@@ -108,6 +167,12 @@ namespace IdleonGame.Levels
             if (attack != null)
             {
                 attack.Configure(basicAttack, rangedAttack, LayerMask.GetMask(GameLayerNames.Monster));
+            }
+
+            var animator = target.GetComponent<Animator>();
+            if (animator != null && animator.runtimeAnimatorController == null)
+            {
+                animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>(PlayerAnimatorControllerPath);
             }
         }
 
@@ -133,7 +198,7 @@ namespace IdleonGame.Levels
             }
 
             texture.Apply();
-            runtimePlayerSprite = Sprite.Create(texture, new Rect(0f, 0f, 16f, 16f), new Vector2(0.5f, 0.5f), 16f);
+            runtimePlayerSprite = Sprite.Create(texture, new Rect(0f, 0f, 16f, 16f), CharacterAnchor2D.BottomCenterPivot, 16f);
             return runtimePlayerSprite;
         }
     }

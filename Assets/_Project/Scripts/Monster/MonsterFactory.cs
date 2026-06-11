@@ -40,7 +40,8 @@ namespace IdleonGame.Monster
             body.interpolation = RigidbodyInterpolation2D.Interpolate;
 
             var collider = monsterObject.AddComponent<BoxCollider2D>();
-            collider.size = new Vector2(0.9f, 0.9f);
+            collider.size = CharacterAnchor2D.MonsterColliderSize;
+            collider.offset = CharacterAnchor2D.MonsterColliderOffset;
 
             monsterObject.AddComponent<CharacterStats>().Configure(
                 definition.MaxHealth,
