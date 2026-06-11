@@ -1,11 +1,13 @@
 using System.Collections.Generic;
+using IdleonGame.Levels;
 using IdleonGame.Navigation;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace IdleonGame.Player
 {
     [DisallowMultipleComponent]
-    public sealed class PlayerAutoNavigator : MonoBehaviour
+    public sealed class PlayerAutoNavigator : MonoBehaviour, ILevelSceneReferenceClient
     {
         [SerializeField] private Camera inputCamera;
         [SerializeField] private TilemapNavigationPathfinder pathfinder;
@@ -123,6 +125,31 @@ namespace IdleonGame.Player
             path.Clear();
         }
 
+        public void OnLevelSceneWillUnload(Scene scene)
+        {
+            if (!scene.IsValid())
+            {
+                return;
+            }
+
+            if (pathfinder != null && pathfinder.gameObject.scene == scene)
+            {
+                StopNavigation();
+                pathfinder = null;
+            }
+        }
+
+        public void OnLevelSceneLoaded(Scene scene)
+        {
+            if (!scene.IsValid())
+            {
+                return;
+            }
+
+            pathfinder = null;
+            FindSceneReferences();
+        }
+
         private void TryNavigateToMousePosition()
         {
             FindSceneReferences();
@@ -208,7 +235,7 @@ namespace IdleonGame.Player
 
             if (pathfinder == null)
             {
-                pathfinder = Object.FindObjectOfType<TilemapNavigationPathfinder>();
+                pathfinder = LevelSceneReferenceResolver.FindInActiveScene<TilemapNavigationPathfinder>();
             }
 
             if (climb == null)

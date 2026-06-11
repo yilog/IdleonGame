@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using IdleonGame.Levels;
 using IdleonGame.Map;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
 
 namespace IdleonGame.Player
@@ -8,7 +10,7 @@ namespace IdleonGame.Player
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody2D))]
     [RequireComponent(typeof(BoxCollider2D))]
-    public sealed class PlayerClimb : MonoBehaviour
+    public sealed class PlayerClimb : MonoBehaviour, ILevelSceneReferenceClient
     {
         [SerializeField] private float climbSpeed = 3f;
         [SerializeField] private float descendGrabDistance = 0.65f;
@@ -60,6 +62,52 @@ namespace IdleonGame.Player
 
             verticalInput = 0f;
             EndClimb();
+        }
+
+        public void OnLevelSceneWillUnload(Scene scene)
+        {
+            if (!scene.IsValid())
+            {
+                return;
+            }
+
+            verticalInput = 0f;
+            if (isClimbing)
+            {
+                EndClimb();
+            }
+            else
+            {
+                SetGroundCollisionsIgnored(false);
+            }
+
+            if (ropeTilemap != null && ropeTilemap.gameObject.scene == scene)
+            {
+                ropeTilemap = null;
+            }
+
+            if (groundTilemap != null && groundTilemap.gameObject.scene == scene)
+            {
+                groundTilemap = null;
+            }
+
+            if (ContainsColliderFromScene(climbThroughColliders, scene))
+            {
+                climbThroughColliders = new Collider2D[0];
+            }
+        }
+
+        public void OnLevelSceneLoaded(Scene scene)
+        {
+            if (!scene.IsValid())
+            {
+                return;
+            }
+
+            ropeTilemap = null;
+            groundTilemap = null;
+            climbThroughColliders = new Collider2D[0];
+            FindSceneReferences();
         }
 
         private void FixedUpdate()
@@ -323,10 +371,10 @@ namespace IdleonGame.Player
         {
             if (ropeTilemap == null)
             {
-                ropeTilemap = Object.FindObjectOfType<RopeTilemap>();
+                ropeTilemap = LevelSceneReferenceResolver.FindInActiveScene<RopeTilemap>();
             }
 
-            var ground = GameObject.Find("Tilemap_Ground");
+            var ground = LevelSceneReferenceResolver.FindInActiveSceneByName<Tilemap>("Tilemap_Ground");
             if (ground == null)
             {
                 groundTilemap = null;
@@ -336,7 +384,7 @@ namespace IdleonGame.Player
 
             if (groundTilemap == null)
             {
-                groundTilemap = ground.GetComponent<Tilemap>();
+                groundTilemap = ground;
             }
 
             if (climbThroughColliders != null && climbThroughColliders.Length > 0)
@@ -344,15 +392,34 @@ namespace IdleonGame.Player
                 return;
             }
 
-            var composite = ground.GetComponent<CompositeCollider2D>();
+            var groundObject = ground.gameObject;
+            var composite = groundObject.GetComponent<CompositeCollider2D>();
             if (composite != null)
             {
                 climbThroughColliders = new Collider2D[] { composite };
                 return;
             }
 
-            var tilemapCollider = ground.GetComponent<TilemapCollider2D>();
+            var tilemapCollider = groundObject.GetComponent<TilemapCollider2D>();
             climbThroughColliders = tilemapCollider != null ? new Collider2D[] { tilemapCollider } : new Collider2D[0];
+        }
+
+        private static bool ContainsColliderFromScene(Collider2D[] colliders, Scene scene)
+        {
+            if (colliders == null)
+            {
+                return false;
+            }
+
+            foreach (var target in colliders)
+            {
+                if (target != null && target.gameObject.scene == scene)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void OnDisable()

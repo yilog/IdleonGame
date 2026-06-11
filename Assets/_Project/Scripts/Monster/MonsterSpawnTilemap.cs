@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using IdleonGame.Levels;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -28,8 +29,7 @@ namespace IdleonGame.Monster
 
             if (groundTilemap == null)
             {
-                var groundObject = GameObject.Find("Tilemap_Ground");
-                groundTilemap = groundObject != null ? groundObject.GetComponent<Tilemap>() : null;
+                groundTilemap = LevelSceneReferenceResolver.FindInSceneByName<Tilemap>(gameObject.scene, "Tilemap_Ground");
             }
 
             ScanSpawnTiles();

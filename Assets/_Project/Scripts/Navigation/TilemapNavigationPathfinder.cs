@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using IdleonGame.Levels;
 using IdleonGame.Map;
 using UnityEngine;
 using UnityEngine.Tilemaps;
@@ -239,16 +240,12 @@ namespace IdleonGame.Navigation
         {
             if (groundTilemap == null)
             {
-                var groundObject = GameObject.Find("Tilemap_Ground");
-                if (groundObject != null)
-                {
-                    groundTilemap = groundObject.GetComponent<Tilemap>();
-                }
+                groundTilemap = LevelSceneReferenceResolver.FindInSceneByName<Tilemap>(gameObject.scene, "Tilemap_Ground");
             }
 
             if (ropeTilemap == null)
             {
-                ropeTilemap = Object.FindObjectOfType<RopeTilemap>();
+                ropeTilemap = LevelSceneReferenceResolver.FindInScene<RopeTilemap>(gameObject.scene);
             }
         }
     }

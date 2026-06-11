@@ -40,4 +40,13 @@ MonoBehaviour:
   spawnPoints:
   - spawnPointId: default
     position: {x: -8, y: -1.75}
-  portals: []
+  portals:
+  - portalId: portal_to_level1_2
+    triggerArea:
+      serializedVersion: 2
+      x: 7.5
+      y: -2.5
+      width: 1
+      height: 1
+    targetSceneId: level1_2
+    targetSpawnPointId: default

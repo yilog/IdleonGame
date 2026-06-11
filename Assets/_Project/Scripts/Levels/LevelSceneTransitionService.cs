@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using IdleonGame.Cameras;
 using IdleonGame.Map;
 using IdleonGame.UI;
@@ -21,7 +22,9 @@ namespace IdleonGame.Levels
         private Scene currentLevelScene;
         private LevelDefinition currentLevel;
         private bool isSwitching;
+        private readonly List<MapPortal> portals = new();
 
+        public Scene CurrentLevelScene => currentLevelScene;
         public LevelDefinition CurrentLevel => currentLevel;
         public bool IsSwitching => isSwitching;
 
@@ -85,6 +88,12 @@ namespace IdleonGame.Levels
 
             isSwitching = true;
             loadingOverlay?.Show();
+            var previousLevelId = currentLevel != null ? currentLevel.LevelId : null;
+
+            if (currentLevelScene.IsValid() && currentLevelScene.isLoaded)
+            {
+                NotifyLevelSceneWillUnload(currentLevelScene);
+            }
 
             var loadOperation = SceneManager.LoadSceneAsync(targetLevel.SceneName, LoadSceneMode.Additive);
             if (loadOperation == null)
@@ -110,7 +119,8 @@ namespace IdleonGame.Levels
             }
 
             SceneManager.SetActiveScene(loadedScene);
-            MovePlayerToLevelSpawn(targetLevel, spawnPointId);
+            NotifyLevelSceneLoaded(loadedScene);
+            MovePlayerToLevelSpawn(targetLevel, spawnPointId, previousLevelId, loadedScene);
             RefreshCameraForLoadedLevel();
 
             if (currentLevelScene.IsValid() && currentLevelScene.isLoaded && currentLevelScene != loadedScene)
@@ -130,16 +140,22 @@ namespace IdleonGame.Levels
             isSwitching = false;
         }
 
-        private void MovePlayerToLevelSpawn(LevelDefinition level, string spawnPointId)
+        private void MovePlayerToLevelSpawn(LevelDefinition level, string spawnPointId, string previousLevelId, Scene loadedScene)
         {
             if (battleController == null)
             {
                 return;
             }
 
+            if (TryGetPreviousLevelPortalPosition(previousLevelId, loadedScene, out var portalPosition))
+            {
+                battleController.MovePlayerTo(portalPosition);
+                return;
+            }
+
             var targetSpawnPointId = string.IsNullOrEmpty(spawnPointId) ? level.DefaultSpawnPointId : spawnPointId;
             var position = level.DefaultSpawnPosition;
-            var mapController = FindObjectOfType<BattleMapController>();
+            var mapController = LevelSceneReferenceResolver.FindInActiveScene<BattleMapController>();
             var mapDefinition = mapController != null ? mapController.MapDefinition : null;
             if (mapDefinition != null)
             {
@@ -154,6 +170,29 @@ namespace IdleonGame.Levels
             }
 
             battleController.MovePlayerTo(position);
+        }
+
+        private bool TryGetPreviousLevelPortalPosition(string previousLevelId, Scene loadedScene, out Vector2 position)
+        {
+            position = default;
+            if (string.IsNullOrEmpty(previousLevelId))
+            {
+                return false;
+            }
+
+            LevelSceneReferenceResolver.FindAllInScene(loadedScene, portals);
+            foreach (var portal in portals)
+            {
+                if (portal != null && portal.TargetLevelId == previousLevelId)
+                {
+                    position = portal.WorldPosition;
+                    portals.Clear();
+                    return true;
+                }
+            }
+
+            portals.Clear();
+            return false;
         }
 
         private void RefreshCameraForLoadedLevel()
@@ -186,6 +225,28 @@ namespace IdleonGame.Levels
             if (loadingOverlay == null)
             {
                 loadingOverlay = FindObjectOfType<LoadingOverlay>();
+            }
+        }
+
+        private static void NotifyLevelSceneWillUnload(Scene scene)
+        {
+            foreach (var behaviour in FindObjectsOfType<MonoBehaviour>())
+            {
+                if (behaviour is ILevelSceneReferenceClient client)
+                {
+                    client.OnLevelSceneWillUnload(scene);
+                }
+            }
+        }
+
+        private static void NotifyLevelSceneLoaded(Scene scene)
+        {
+            foreach (var behaviour in FindObjectsOfType<MonoBehaviour>())
+            {
+                if (behaviour is ILevelSceneReferenceClient client)
+                {
+                    client.OnLevelSceneLoaded(scene);
+                }
             }
         }
     }

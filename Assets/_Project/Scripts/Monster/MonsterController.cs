@@ -2,6 +2,7 @@ using IdleonGame.Character;
 using IdleonGame.Combat;
 using IdleonGame.Core;
 using IdleonGame.Items;
+using IdleonGame.Levels;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -235,11 +236,7 @@ namespace IdleonGame.Monster
                 return;
             }
 
-            var ground = GameObject.Find("Tilemap_Ground");
-            if (ground != null)
-            {
-                groundTilemap = ground.GetComponent<Tilemap>();
-            }
+            groundTilemap = LevelSceneReferenceResolver.FindInSceneByName<Tilemap>(gameObject.scene, "Tilemap_Ground");
         }
 
         private enum MovementState

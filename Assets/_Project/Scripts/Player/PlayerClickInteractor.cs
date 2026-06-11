@@ -1,11 +1,14 @@
 using IdleonGame.Character;
 using IdleonGame.Items;
+using IdleonGame.Levels;
+using IdleonGame.Map;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace IdleonGame.Player
 {
     [DisallowMultipleComponent]
-    public sealed class PlayerClickInteractor : MonoBehaviour
+    public sealed class PlayerClickInteractor : MonoBehaviour, ILevelSceneReferenceClient
     {
         [SerializeField] private Camera inputCamera;
         [SerializeField] private PlayerAttack attack;
@@ -15,6 +18,7 @@ namespace IdleonGame.Player
 
         private readonly Collider2D[] clickResults = new Collider2D[16];
         private Damageable pendingAttackTarget;
+        private MapPortal pendingPortal;
         private bool isAutoHunting;
 
         private void Awake()
@@ -39,6 +43,11 @@ namespace IdleonGame.Player
                 UpdatePendingAttack();
             }
 
+            if (pendingPortal != null)
+            {
+                UpdatePendingPortal();
+            }
+
             if (UnityEngine.Input.GetMouseButtonDown(0))
             {
                 HandlePrimaryClick();
@@ -57,6 +66,13 @@ namespace IdleonGame.Player
             var clickPoint = new Vector2(mouseWorld.x, mouseWorld.y);
             var hitCount = Physics2D.OverlapPointNonAlloc(clickPoint, clickResults);
 
+            var portal = FindClickedPortal(hitCount, clickPoint);
+            if (portal != null)
+            {
+                HandlePortalClick(portal);
+                return;
+            }
+
             var monster = FindClickedMonster(hitCount, clickPoint);
             if (monster != null)
             {
@@ -73,11 +89,42 @@ namespace IdleonGame.Player
             }
 
             pendingAttackTarget = null;
+            pendingPortal = null;
             autoNavigator?.TryNavigateToWorldPosition(mouseWorld);
+        }
+
+        public void OnLevelSceneWillUnload(Scene scene)
+        {
+            if (!scene.IsValid())
+            {
+                return;
+            }
+
+            var pendingComponent = pendingAttackTarget as Component;
+            if (pendingComponent != null && pendingComponent.gameObject.scene == scene)
+            {
+                pendingAttackTarget = null;
+            }
+
+            if (pendingPortal != null && pendingPortal.gameObject.scene == scene)
+            {
+                pendingPortal = null;
+            }
+        }
+
+        public void OnLevelSceneLoaded(Scene scene)
+        {
+            if (!scene.IsValid())
+            {
+                return;
+            }
+
+            FindReferences();
         }
 
         private void HandleMonsterClick(Damageable monster)
         {
+            pendingPortal = null;
             pendingAttackTarget = monster;
             if (attack != null && attack.TryUseRangedAttack(monster))
             {
@@ -88,6 +135,30 @@ namespace IdleonGame.Player
             if (targetTransform != null && autoNavigator != null)
             {
                 autoNavigator.TryNavigateToWorldPosition(targetTransform.position);
+            }
+        }
+
+        private void HandlePortalClick(MapPortal portal)
+        {
+            pendingAttackTarget = null;
+            if (!portal.IsActive)
+            {
+                pendingPortal = null;
+                autoNavigator?.StopNavigation();
+                return;
+            }
+
+            pendingPortal = portal;
+
+            if (pendingPortal.IsInPortalCell(transform.position))
+            {
+                ActivatePendingPortal();
+                return;
+            }
+
+            if (autoNavigator == null || !autoNavigator.TryNavigateToWorldPosition(pendingPortal.WorldPosition))
+            {
+                pendingPortal = null;
             }
         }
 
@@ -125,8 +196,32 @@ namespace IdleonGame.Player
             if (!isAutoHunting)
             {
                 pendingAttackTarget = null;
+                pendingPortal = null;
                 autoNavigator?.StopNavigation();
             }
+        }
+
+        private void UpdatePendingPortal()
+        {
+            if (pendingPortal == null)
+            {
+                return;
+            }
+
+            if (!pendingPortal.IsInPortalCell(transform.position))
+            {
+                return;
+            }
+
+            ActivatePendingPortal();
+        }
+
+        private void ActivatePendingPortal()
+        {
+            var portal = pendingPortal;
+            pendingPortal = null;
+            autoNavigator?.StopNavigation();
+            portal.TryActivate();
         }
 
         private Damageable FindClickedMonster(int hitCount, Vector2 clickPoint)
@@ -185,6 +280,35 @@ namespace IdleonGame.Player
             }
 
             return bestItem;
+        }
+
+        private MapPortal FindClickedPortal(int hitCount, Vector2 clickPoint)
+        {
+            MapPortal bestPortal = null;
+            var bestDistance = float.PositiveInfinity;
+            for (var i = 0; i < hitCount; i++)
+            {
+                var hit = clickResults[i];
+                if (hit == null)
+                {
+                    continue;
+                }
+
+                var portal = hit.GetComponentInParent<MapPortal>();
+                if (portal == null)
+                {
+                    continue;
+                }
+
+                var distance = Vector2.Distance(clickPoint, hit.ClosestPoint(clickPoint));
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestPortal = portal;
+                }
+            }
+
+            return bestPortal;
         }
 
         private Damageable FindNearestMonster()

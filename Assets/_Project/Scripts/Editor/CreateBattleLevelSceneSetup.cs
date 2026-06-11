@@ -27,6 +27,9 @@ namespace IdleonGame.Editor
         private const string GroundTilePath = "Assets/_Project/Tilemaps/Tiles/TestGroundTile.asset";
         private const string RopeTilePath = "Assets/_Project/Tilemaps/Tiles/TestRopeTile.asset";
         private const string MonsterSpawnTilePath = "Assets/_Project/Tilemaps/Tiles/TestMonsterSpawnTile.asset";
+        private const string PortalTexturePath = "Assets/_Project/Tilemaps/Tiles/TestPortalTile.png";
+        private const string PortalToLevel1_1TilePath = "Assets/_Project/Tilemaps/Tiles/TestPortalToLevel1_1Tile.asset";
+        private const string PortalToLevel1_2TilePath = "Assets/_Project/Tilemaps/Tiles/TestPortalToLevel1_2Tile.asset";
         private const string BasicAttackPath = "Assets/_Project/ScriptableObjects/Skills/PlayerBasicAttack.asset";
         private const string ArrowAttackPath = "Assets/_Project/ScriptableObjects/Skills/PlayerArrowAttack.asset";
         private const string TestScenePath = "Assets/_Project/Scenes/Maps/Test_Battle_Tilemap.unity";
@@ -42,6 +45,24 @@ namespace IdleonGame.Editor
             CreateLevelDatabase(level1, level2);
             CreateBattleScene();
             SyncBuildSettings();
+            SyncProjectTilePalette.SyncPalette();
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        [MenuItem("IdleonGame/Setup/Add Test Level Portals")]
+        public static void AddTestLevelPortals()
+        {
+            EnsureFolders();
+            var portalToLevel1_2 = CreatePortalTile(PortalToLevel1_2TilePath, "portal_to_level1_2", "level1_2", true);
+            var portalToLevel1_1 = CreatePortalTile(PortalToLevel1_1TilePath, "portal_to_level1_1", "level1_1", true);
+
+            AddPortalToLevelScene($"{LevelSceneFolder}/level1_1.unity", new Vector3Int(8, -2, 0), portalToLevel1_2);
+            AddPortalToLevelScene($"{LevelSceneFolder}/level1_2.unity", new Vector3Int(-8, -2, 0), portalToLevel1_1);
+            UpdateMapDefinitionPortal("level1_1", 0);
+            UpdateMapDefinitionPortal("level1_2", 1);
+            SyncProjectTilePalette.SyncPalette();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -87,10 +108,13 @@ namespace IdleonGame.Editor
         private static LevelDefinition CreateLevel(string levelId, string displayName, Vector2 spawnPosition, int variant)
         {
             var scenePath = $"{LevelSceneFolder}/{levelId}.unity";
-            var mapDefinition = CreateMapDefinition(levelId, displayName, spawnPosition);
+            var mapDefinition = CreateMapDefinition(levelId, displayName, spawnPosition, variant);
             var groundTile = AssetDatabase.LoadAssetAtPath<TileBase>(GroundTilePath);
             var ropeTile = AssetDatabase.LoadAssetAtPath<TileBase>(RopeTilePath);
             var monsterSpawnTile = AssetDatabase.LoadAssetAtPath<TileBase>(MonsterSpawnTilePath);
+            var portalTile = variant == 0
+                ? CreatePortalTile(PortalToLevel1_2TilePath, "portal_to_level1_2", "level1_2", true)
+                : CreatePortalTile(PortalToLevel1_1TilePath, "portal_to_level1_1", "level1_1", true);
 
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = levelId;
@@ -121,6 +145,8 @@ namespace IdleonGame.Editor
 
             PaintGround(groundLayer.Tilemap, groundTile, variant);
             decorationLayer.gameObject.AddComponent<RopeTilemap>().Configure(ropeTile);
+            decorationLayer.gameObject.AddComponent<MapPortalTilemap>();
+            PaintPortal(decorationLayer.Tilemap, portalTile, variant);
             PaintMonsterSpawnPoint(monsterSpawnLayer.Tilemap, monsterSpawnTile, variant);
             monsterSpawnLayer.gameObject.AddComponent<MonsterSpawnTilemap>().Configure(groundLayer.Tilemap);
 
@@ -135,7 +161,7 @@ namespace IdleonGame.Editor
             return CreateLevelDefinition(levelId, displayName, scenePath, spawnPosition);
         }
 
-        private static MapSceneDefinition CreateMapDefinition(string levelId, string displayName, Vector2 spawnPosition)
+        private static MapSceneDefinition CreateMapDefinition(string levelId, string displayName, Vector2 spawnPosition, int variant)
         {
             var path = $"{MapDataFolder}/{levelId}_Map.asset";
             var mapDefinition = AssetDatabase.LoadAssetAtPath<MapSceneDefinition>(path);
@@ -162,7 +188,16 @@ namespace IdleonGame.Editor
                 {
                     new MapSpawnPointData { spawnPointId = "default", position = spawnPosition }
                 },
-                new List<MapPortalData>());
+                new List<MapPortalData>
+                {
+                    new MapPortalData
+                    {
+                        portalId = variant == 0 ? "portal_to_level1_2" : "portal_to_level1_1",
+                        triggerArea = new Rect(variant == 0 ? 7.5f : -8.5f, -2.5f, 1f, 1f),
+                        targetSceneId = variant == 0 ? "level1_2" : "level1_1",
+                        targetSpawnPointId = "default"
+                    }
+                });
 
             EditorUtility.SetDirty(mapDefinition);
             return mapDefinition;
@@ -241,6 +276,121 @@ namespace IdleonGame.Editor
         {
             spawnTilemap.SetTile(new Vector3Int(variant == 0 ? -4 : 4, -2, 0), spawnTile);
             spawnTilemap.CompressBounds();
+        }
+
+        private static void PaintPortal(Tilemap decorationTilemap, TileBase portalTile, int variant)
+        {
+            decorationTilemap.SetTile(new Vector3Int(variant == 0 ? 8 : -8, -2, 0), portalTile);
+            decorationTilemap.CompressBounds();
+        }
+
+        private static MapPortalTile CreatePortalTile(string path, string portalId, string targetLevelId, bool isActive)
+        {
+            var sprite = CreatePortalSprite();
+            var tile = AssetDatabase.LoadAssetAtPath<MapPortalTile>(path);
+            if (tile == null)
+            {
+                tile = ScriptableObject.CreateInstance<MapPortalTile>();
+                tile.name = Path.GetFileNameWithoutExtension(path);
+                AssetDatabase.CreateAsset(tile, path);
+            }
+
+            tile.EditorSetData(portalId, targetLevelId, "default", isActive, sprite);
+            EditorUtility.SetDirty(tile);
+            return tile;
+        }
+
+        private static Sprite CreatePortalSprite()
+        {
+            if (!File.Exists(PortalTexturePath))
+            {
+                var texture = new Texture2D(16, 16, TextureFormat.RGBA32, false);
+                for (var y = 0; y < texture.height; y++)
+                {
+                    for (var x = 0; x < texture.width; x++)
+                    {
+                        var frame = x <= 2 || x >= 13 || y >= 13;
+                        var core = x >= 5 && x <= 10 && y >= 3 && y <= 11;
+                        var color = frame
+                            ? new Color32(72, 45, 110, 255)
+                            : core ? new Color32(88, 214, 232, 255) : new Color32(28, 32, 58, 255);
+                        texture.SetPixel(x, y, color);
+                    }
+                }
+
+                texture.Apply();
+                File.WriteAllBytes(PortalTexturePath, texture.EncodeToPNG());
+                AssetDatabase.ImportAsset(PortalTexturePath);
+            }
+
+            var importer = AssetImporter.GetAtPath(PortalTexturePath) as TextureImporter;
+            if (importer != null)
+            {
+                importer.textureType = TextureImporterType.Sprite;
+                importer.spritePixelsPerUnit = 16;
+                importer.filterMode = FilterMode.Point;
+                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.SaveAndReimport();
+            }
+
+            return AssetDatabase.LoadAssetAtPath<Sprite>(PortalTexturePath);
+        }
+
+        private static void AddPortalToLevelScene(string scenePath, Vector3Int cell, MapPortalTile portalTile)
+        {
+            var scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            var decorationObject = GameObject.Find("Tilemap_Decoration");
+            if (decorationObject == null)
+            {
+                Debug.LogWarning($"Cannot add portal. Missing Tilemap_Decoration in {scenePath}");
+                return;
+            }
+
+            var decorationTilemap = decorationObject.GetComponent<Tilemap>();
+            if (decorationTilemap == null)
+            {
+                Debug.LogWarning($"Cannot add portal. Tilemap_Decoration has no Tilemap in {scenePath}");
+                return;
+            }
+
+            if (decorationObject.GetComponent<MapPortalTilemap>() == null)
+            {
+                decorationObject.AddComponent<MapPortalTilemap>();
+            }
+
+            decorationTilemap.SetTile(cell, portalTile);
+            decorationTilemap.CompressBounds();
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+        }
+
+        private static void UpdateMapDefinitionPortal(string levelId, int variant)
+        {
+            var path = $"{MapDataFolder}/{levelId}_Map.asset";
+            var mapDefinition = AssetDatabase.LoadAssetAtPath<MapSceneDefinition>(path);
+            if (mapDefinition == null)
+            {
+                return;
+            }
+
+            mapDefinition.EditorSetData(
+                mapDefinition.SceneId,
+                mapDefinition.DisplayName,
+                mapDefinition.Origin,
+                mapDefinition.Size,
+                new List<MapTilemapLayerDefinition>(mapDefinition.TilemapLayers),
+                new List<MapSpawnPointData>(mapDefinition.SpawnPoints),
+                new List<MapPortalData>
+                {
+                    new MapPortalData
+                    {
+                        portalId = variant == 0 ? "portal_to_level1_2" : "portal_to_level1_1",
+                        triggerArea = new Rect(variant == 0 ? 7.5f : -8.5f, -2.5f, 1f, 1f),
+                        targetSceneId = variant == 0 ? "level1_2" : "level1_1",
+                        targetSpawnPointId = "default"
+                    }
+                });
+            EditorUtility.SetDirty(mapDefinition);
         }
 
         private static void AssignBattleController(BattleSceneController battleController)

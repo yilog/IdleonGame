@@ -1,12 +1,14 @@
 using Cinemachine;
+using IdleonGame.Levels;
 using IdleonGame.Map;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace IdleonGame.Cameras
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(UnityEngine.Camera))]
-    public sealed class MapCameraController : MonoBehaviour
+    public sealed class MapCameraController : MonoBehaviour, ILevelSceneReferenceClient
     {
         private const string PlayerObjectName = "Player_TestBlock";
         private const string VirtualCameraName = "CM_PlayerFollowCamera";
@@ -37,6 +39,22 @@ namespace IdleonGame.Cameras
             player = null;
             mapController = null;
             ConfigureCamera();
+        }
+
+        public void OnLevelSceneWillUnload(Scene scene)
+        {
+            if (mapController != null && scene.IsValid() && mapController.gameObject.scene == scene)
+            {
+                mapController = null;
+            }
+        }
+
+        public void OnLevelSceneLoaded(Scene scene)
+        {
+            if (scene.IsValid())
+            {
+                RefreshCamera();
+            }
         }
 
         private void ConfigureCamera()
@@ -165,7 +183,7 @@ namespace IdleonGame.Cameras
 
             if (mapController == null)
             {
-                mapController = FindObjectOfType<BattleMapController>();
+                mapController = LevelSceneReferenceResolver.FindInActiveScene<BattleMapController>();
             }
         }
     }
