@@ -1,5 +1,6 @@
 using IdleonGame.Character;
 using IdleonGame.Combat;
+using IdleonGame.Data;
 using IdleonGame.Core;
 using IdleonGame.Items;
 using IdleonGame.Levels;
@@ -21,6 +22,7 @@ namespace IdleonGame.Monster
         [SerializeField] private float edgeProbeDistance = 0.55f;
         [SerializeField] private float groundProbeDistance = 0.12f;
         [SerializeField] private float wallProbeDistance = 0.08f;
+        [SerializeField] private MonsterAnimator monsterAnimator;
 
         private Rigidbody2D body;
         private BoxCollider2D bodyCollider;
@@ -38,6 +40,7 @@ namespace IdleonGame.Monster
             body = GetComponent<Rigidbody2D>();
             bodyCollider = GetComponent<BoxCollider2D>();
             stats = GetComponent<CharacterStats>();
+            monsterAnimator = GetComponent<MonsterAnimator>();
             ConfigurePhysics();
             FindSceneReferences();
         }
@@ -47,6 +50,7 @@ namespace IdleonGame.Monster
             body = GetComponent<Rigidbody2D>();
             bodyCollider = GetComponent<BoxCollider2D>();
             stats = GetComponent<CharacterStats>();
+            monsterAnimator = GetComponent<MonsterAnimator>();
             ConfigurePhysics();
             FindSceneReferences();
             ConfigureLayerCollision();
@@ -74,6 +78,7 @@ namespace IdleonGame.Monster
             if (movementState == MovementState.Idle)
             {
                 StopHorizontalMovement();
+                monsterAnimator?.PlayIdle();
                 return;
             }
 
@@ -85,6 +90,8 @@ namespace IdleonGame.Monster
             var velocity = body.velocity;
             velocity.x = facingDirection * definition.MoveSpeed;
             body.velocity = velocity;
+            monsterAnimator?.SetFacingDirection(facingDirection);
+            monsterAnimator?.PlayRun();
         }
 
         public void Configure(MonsterDefinition monsterDefinition, Tilemap ground)
@@ -95,6 +102,11 @@ namespace IdleonGame.Monster
             if (stats == null)
             {
                 stats = GetComponent<CharacterStats>();
+            }
+
+            if (monsterAnimator == null)
+            {
+                monsterAnimator = GetComponent<MonsterAnimator>();
             }
 
             if (definition != null && stats != null)
@@ -116,7 +128,10 @@ namespace IdleonGame.Monster
             if (stats.IsDead)
             {
                 Die();
+                return;
             }
+
+            monsterAnimator?.PlayGetHit();
         }
 
         public void TakeDamage(int amount)
@@ -127,6 +142,7 @@ namespace IdleonGame.Monster
         private void Die()
         {
             isDead = true;
+            monsterAnimator?.PlayDeath();
             body.velocity = Vector2.zero;
             body.simulated = false;
 
@@ -146,7 +162,9 @@ namespace IdleonGame.Monster
                 name,
                 gameObject.scene);
 
-            var spriteRenderer = GetComponent<SpriteRenderer>();
+            PlayerRuntimeDataService.Instance?.RecordMonsterKill(definition != null ? definition.MonsterId : null);
+
+            var spriteRenderer = GetComponentInChildren<SpriteRenderer>();
             if (spriteRenderer != null)
             {
                 spriteRenderer.color = new Color32(80, 80, 80, 180);

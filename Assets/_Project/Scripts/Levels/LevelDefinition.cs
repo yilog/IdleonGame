@@ -1,4 +1,5 @@
 using UnityEngine;
+using IdleonGame.Data;
 
 namespace IdleonGame.Levels
 {
@@ -11,6 +12,7 @@ namespace IdleonGame.Levels
         [SerializeField] private string scenePath;
         [SerializeField] private string defaultSpawnPointId = "default";
         [SerializeField] private Vector2 defaultSpawnPosition = new(-8f, -2f);
+        [SerializeField] private LevelUnlockCondition[] unlockConditions = System.Array.Empty<LevelUnlockCondition>();
 
         public string LevelId => levelId;
         public string DisplayName => displayName;
@@ -18,6 +20,25 @@ namespace IdleonGame.Levels
         public string ScenePath => scenePath;
         public string DefaultSpawnPointId => defaultSpawnPointId;
         public Vector2 DefaultSpawnPosition => defaultSpawnPosition;
+        public LevelUnlockCondition[] UnlockConditions => unlockConditions;
+
+        public bool IsUnlocked(PlayerRuntimeData data)
+        {
+            if (unlockConditions == null || unlockConditions.Length == 0)
+            {
+                return true;
+            }
+
+            foreach (var condition in unlockConditions)
+            {
+                if (condition != null && !condition.IsMet(data))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
 
 #if UNITY_EDITOR
         public void EditorSetData(
@@ -26,7 +47,8 @@ namespace IdleonGame.Levels
             string newSceneName,
             string newScenePath,
             string newDefaultSpawnPointId,
-            Vector2 newDefaultSpawnPosition)
+            Vector2 newDefaultSpawnPosition,
+            LevelUnlockCondition[] newUnlockConditions = null)
         {
             levelId = newLevelId;
             displayName = newDisplayName;
@@ -34,6 +56,7 @@ namespace IdleonGame.Levels
             scenePath = newScenePath;
             defaultSpawnPointId = newDefaultSpawnPointId;
             defaultSpawnPosition = newDefaultSpawnPosition;
+            unlockConditions = newUnlockConditions ?? System.Array.Empty<LevelUnlockCondition>();
         }
 #endif
     }

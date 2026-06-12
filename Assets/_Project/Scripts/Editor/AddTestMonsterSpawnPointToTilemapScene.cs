@@ -97,6 +97,7 @@ namespace IdleonGame.Editor
             definition.EditorSetData(
                 "test_walker",
                 "Test Walker",
+                null,
                 sprite,
                 Vector2Int.one,
                 20,

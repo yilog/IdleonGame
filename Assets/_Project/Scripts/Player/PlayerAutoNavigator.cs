@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using IdleonGame.Levels;
 using IdleonGame.Navigation;
+using IdleonGame.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -33,6 +34,11 @@ namespace IdleonGame.Player
         {
             if (handleMouseClickInput && UnityEngine.Input.GetMouseButtonDown(0))
             {
+                if (UIInputBlocker.ShouldBlockScenePointerInput())
+                {
+                    return;
+                }
+
                 TryNavigateToMousePosition();
             }
         }

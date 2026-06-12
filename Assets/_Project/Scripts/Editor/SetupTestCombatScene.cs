@@ -194,6 +194,7 @@ namespace IdleonGame.Editor
             definition.EditorSetData(
                 "test_walker",
                 "Test Walker",
+                null,
                 monsterSprite,
                 Vector2Int.one,
                 20,
@@ -291,6 +292,11 @@ namespace IdleonGame.Editor
             if (inventory == null)
             {
                 player.AddComponent<PlayerInventory>();
+            }
+
+            if (player.GetComponent<PlayerSkillController>() == null)
+            {
+                player.AddComponent<PlayerSkillController>();
             }
 
             var attackComponent = player.GetComponent<PlayerAttack>();

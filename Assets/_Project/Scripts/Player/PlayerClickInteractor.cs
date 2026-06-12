@@ -2,6 +2,7 @@ using IdleonGame.Character;
 using IdleonGame.Items;
 using IdleonGame.Levels;
 using IdleonGame.Map;
+using IdleonGame.UI;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -20,6 +21,8 @@ namespace IdleonGame.Player
         private Damageable pendingAttackTarget;
         private MapPortal pendingPortal;
         private bool isAutoHunting;
+
+        public bool IsAutoHunting => isAutoHunting;
 
         private void Awake()
         {
@@ -50,6 +53,11 @@ namespace IdleonGame.Player
 
             if (UnityEngine.Input.GetMouseButtonDown(0))
             {
+                if (UIInputBlocker.ShouldBlockScenePointerInput())
+                {
+                    return;
+                }
+
                 HandlePrimaryClick();
             }
         }
@@ -190,9 +198,14 @@ namespace IdleonGame.Player
             attack.TryUseRangedAttack(pendingAttackTarget);
         }
 
-        private void ToggleAutoHunt()
+        public void ToggleAutoHunt()
         {
-            isAutoHunting = !isAutoHunting;
+            SetAutoHuntEnabled(!isAutoHunting);
+        }
+
+        public void SetAutoHuntEnabled(bool enabled)
+        {
+            isAutoHunting = enabled;
             if (!isAutoHunting)
             {
                 pendingAttackTarget = null;

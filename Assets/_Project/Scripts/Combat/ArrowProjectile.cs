@@ -45,7 +45,7 @@ namespace IdleonGame.Combat
 
             var box = GetComponent<BoxCollider2D>();
             box.isTrigger = true;
-            box.size = attack != null ? attack.HitboxSize : new Vector2(0.7f, 0.18f);
+            box.size = attack != null ? attack.HitboxSize : new Vector2(0.5f, 0.18f);
 
             ConfigurePresentation();
             transform.localScale = new Vector3(direction, 1f, 1f);

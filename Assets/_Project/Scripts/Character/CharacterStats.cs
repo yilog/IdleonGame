@@ -36,6 +36,16 @@ namespace IdleonGame.Character
             defense = Mathf.Max(0, armor);
         }
 
+        public void ConfigureSnapshot(int newMaxHealth, int newCurrentHealth, int newMaxMana, int newCurrentMana, int newBaseAttack, int newDefense)
+        {
+            maxHealth = Mathf.Max(1, newMaxHealth);
+            currentHealth = Mathf.Clamp(newCurrentHealth, 0, maxHealth);
+            maxMana = Mathf.Max(0, newMaxMana);
+            currentMana = Mathf.Clamp(newCurrentMana, 0, maxMana);
+            baseAttack = Mathf.Max(0, newBaseAttack);
+            defense = Mathf.Max(0, newDefense);
+        }
+
         public bool SpendMana(int amount)
         {
             if (amount <= 0)

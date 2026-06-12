@@ -18,6 +18,12 @@ MonoBehaviour:
   attackPower: 10
   manaCost: 0
   cooldownSeconds: 2
+  startupSeconds: 0.15
+  activeSeconds: 0.05
+  recoverySeconds: 0.2
+  canMoveDuringStartup: 1
+  cancelStartupOnMove: 1
+  canMoveDuringRecovery: 0
   range: 0
   hitboxSize: {x: 0.75, y: 0.18}
   projectileSpeed: 12

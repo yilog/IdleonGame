@@ -40,6 +40,7 @@ namespace IdleonGame.Monster
     {
         [SerializeField] private string monsterId = "test_walker";
         [SerializeField] private string displayName = "Test Walker";
+        [SerializeField] private GameObject prefab;
         [SerializeField] private Sprite sprite;
         [SerializeField] private Vector2Int tileSize = Vector2Int.one;
         [SerializeField] private int maxHealth = 20;
@@ -59,6 +60,7 @@ namespace IdleonGame.Monster
 
         public string MonsterId => monsterId;
         public string DisplayName => displayName;
+        public GameObject Prefab => prefab;
         public Sprite Sprite => sprite;
         public Vector2Int TileSize => tileSize;
         public int MaxHealth => maxHealth;
@@ -80,6 +82,7 @@ namespace IdleonGame.Monster
         public void EditorSetData(
             string id,
             string name,
+            GameObject monsterPrefab,
             Sprite monsterSprite,
             Vector2Int size,
             int health,
@@ -99,6 +102,7 @@ namespace IdleonGame.Monster
         {
             monsterId = id;
             displayName = name;
+            prefab = monsterPrefab;
             sprite = monsterSprite;
             tileSize = size;
             maxHealth = health;

@@ -1,8 +1,10 @@
 using IdleonGame.Character;
 using IdleonGame.Combat;
 using IdleonGame.Core;
+using IdleonGame.Data;
 using IdleonGame.Items;
 using IdleonGame.Player;
+using IdleonGame.UI;
 using UnityEngine;
 
 namespace IdleonGame.Levels
@@ -25,6 +27,8 @@ namespace IdleonGame.Levels
 
         private void Awake()
         {
+            PlayerRuntimeDataService.EnsureExists();
+            UIManager.EnsureExists();
             EnsurePlayer();
         }
 
@@ -91,10 +95,12 @@ namespace IdleonGame.Levels
             EnsurePresentationComponents(created);
 
             EnsureComponent<CharacterStats>(created);
+            EnsureComponent<PlayerRuntimeDataBinder>(created);
             EnsureComponent<PlayerInventory>(created);
             EnsureComponent<PlayerClimb>(created);
             EnsureComponent<PlayerMovement>(created);
             EnsureComponent<PlayerAutoNavigator>(created);
+            EnsureComponent<PlayerSkillController>(created);
             EnsureComponent<PlayerAttack>(created);
             EnsureComponent<PlayerClickInteractor>(created);
             EnsureComponent<PlayerController>(created);
@@ -162,7 +168,10 @@ namespace IdleonGame.Levels
             {
                 stats.Configure(100, 50, 6, 1);
             }
+            PlayerRuntimeDataService.Instance?.SyncFromStats(stats);
+            EnsureComponent<PlayerRuntimeDataBinder>(target);
 
+            EnsureComponent<PlayerSkillController>(target);
             var attack = target.GetComponent<PlayerAttack>();
             if (attack != null)
             {

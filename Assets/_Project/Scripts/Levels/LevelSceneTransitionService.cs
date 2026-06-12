@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using IdleonGame.Cameras;
+using IdleonGame.Data;
 using IdleonGame.Map;
 using IdleonGame.UI;
 using UnityEngine;
@@ -43,6 +44,7 @@ namespace IdleonGame.Levels
         private IEnumerator Start()
         {
             FindReferences();
+            PlayerRuntimeDataService.EnsureExists();
             battleController?.EnsurePlayer();
 
             var targetLevel = levelDatabase != null ? levelDatabase.GetDefaultLevel() : LevelDatabase.Find(initialLevelId);
@@ -83,6 +85,14 @@ namespace IdleonGame.Levels
             if (targetLevel == null)
             {
                 Debug.LogWarning($"Level transition failed. Unknown level id: {levelId}");
+                yield break;
+            }
+
+            var runtimeData = PlayerRuntimeDataService.EnsureExists();
+            runtimeData.RefreshLevelUnlocks(levelDatabase);
+            if (!runtimeData.IsLevelUnlocked(targetLevel))
+            {
+                Debug.LogWarning($"Level transition failed. Level is locked: {levelId}");
                 yield break;
             }
 
@@ -134,6 +144,7 @@ namespace IdleonGame.Levels
 
             currentLevelScene = loadedScene;
             currentLevel = targetLevel;
+            PlayerRuntimeDataService.Instance?.SetCurrentLevel(targetLevel.LevelId);
 
             yield return new WaitForSeconds(1f);
             loadingOverlay?.Hide();

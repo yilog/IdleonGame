@@ -17,4 +17,16 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/_Project/Scenes/Maps/Test_Battle_Tilemap.unity
     guid: 976e0babbfaedbf448bf3813aee479c3
+  - enabled: 1
+    path: Assets/_Project/Scenes/Levels/level1_3.unity
+    guid: 9d4dd284a7b1eaf4b9332139fe6a3c00
+  - enabled: 1
+    path: Assets/_Project/Scenes/Levels/level2_1.unity
+    guid: 958b2b1f6f196cf4fadc4acf60234f38
+  - enabled: 1
+    path: Assets/_Project/Scenes/Levels/level2_2.unity
+    guid: 6463feea1bdb4174689db8f7fb08c545
+  - enabled: 1
+    path: Assets/_Project/Scenes/Levels/level2_3.unity
+    guid: eefb3a06d0d74e641a7152c7588ce6d0
   m_configObjects: {}
