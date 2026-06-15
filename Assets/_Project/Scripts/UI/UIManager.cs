@@ -11,6 +11,8 @@ namespace IdleonGame.UI
         private const string DefaultBattleHudWindowId = "battle_hud";
         private const string DefaultTestWindowId = "test_window";
         private const string DefaultMapWindowId = UIMapWindowController.WindowIdConst;
+        private const string DefaultTalentWindowId = UITalentWindowController.WindowIdConst;
+        private const string DefaultUpgradeWindowId = UIUpgradeWindowController.WindowIdConst;
         private const int FullscreenBaseOrder = 1000;
         private const int FloatingBaseOrder = 2000;
 
@@ -24,6 +26,8 @@ namespace IdleonGame.UI
         [SerializeField] private KeyCode testWindowKey = KeyCode.U;
         [SerializeField] private bool enableMapWindowHotkey = true;
         [SerializeField] private KeyCode mapWindowKey = KeyCode.M;
+        [SerializeField] private bool enableUpgradeWindowHotkey = true;
+        [SerializeField] private KeyCode upgradeWindowKey = KeyCode.O;
         [SerializeField] private List<UIWindowDefinition> windows = new();
 
         private readonly Dictionary<string, UIWindowDefinition> definitions = new();
@@ -48,6 +52,7 @@ namespace IdleonGame.UI
             DontDestroyOnLoad(gameObject);
             EnsureInfrastructure();
             RebuildDefinitions();
+            UICombatFeedbackManager.EnsureExists();
         }
 
         private void Start()
@@ -65,6 +70,11 @@ namespace IdleonGame.UI
             if (enableMapWindowHotkey && UnityEngine.Input.GetKeyDown(mapWindowKey))
             {
                 OpenWindow(DefaultMapWindowId);
+            }
+
+            if (enableUpgradeWindowHotkey && UnityEngine.Input.GetKeyDown(upgradeWindowKey))
+            {
+                OpenWindow(DefaultUpgradeWindowId);
             }
         }
 
@@ -191,6 +201,16 @@ namespace IdleonGame.UI
             {
                 definitions[DefaultMapWindowId] = new UIWindowDefinition(DefaultMapWindowId, null, "Prefabs/UI/UIMap", UIWindowMode.Floating, true, false);
             }
+
+            if (!definitions.ContainsKey(DefaultTalentWindowId))
+            {
+                definitions[DefaultTalentWindowId] = new UIWindowDefinition(DefaultTalentWindowId, null, "Prefabs/UI/UITalent", UIWindowMode.Floating, true, false);
+            }
+
+            if (!definitions.ContainsKey(DefaultUpgradeWindowId))
+            {
+                definitions[DefaultUpgradeWindowId] = new UIWindowDefinition(DefaultUpgradeWindowId, null, "Prefabs/UI/UIUpgrade", UIWindowMode.Floating, true, false);
+            }
         }
 
         private void OpenStartupWindows()
@@ -214,6 +234,16 @@ namespace IdleonGame.UI
             if (windowId == DefaultBattleHudWindowId)
             {
                 return new UIWindowDefinition(DefaultBattleHudWindowId, null, "Prefabs/UI/BattleHUD", UIWindowMode.Fullscreen, false, true);
+            }
+
+            if (windowId == DefaultTalentWindowId)
+            {
+                return new UIWindowDefinition(DefaultTalentWindowId, null, "Prefabs/UI/UITalent", UIWindowMode.Floating, true, false);
+            }
+
+            if (windowId == DefaultUpgradeWindowId)
+            {
+                return new UIWindowDefinition(DefaultUpgradeWindowId, null, "Prefabs/UI/UIUpgrade", UIWindowMode.Floating, true, false);
             }
 
             return new UIWindowDefinition(windowId, null, null, UIWindowMode.Floating, true, false);
@@ -251,6 +281,18 @@ namespace IdleonGame.UI
                 return windowObject;
             }
 
+            if (definition.WindowId == DefaultTalentWindowId)
+            {
+                windowObject.AddComponent<UITalentWindowController>();
+                return windowObject;
+            }
+
+            if (definition.WindowId == DefaultUpgradeWindowId)
+            {
+                windowObject.AddComponent<UIUpgradeWindowController>();
+                return windowObject;
+            }
+
             windowObject.AddComponent<GenericWindowController>();
             return windowObject;
         }
@@ -270,6 +312,16 @@ namespace IdleonGame.UI
             if (definition.WindowId == DefaultMapWindowId)
             {
                 return windowObject.AddComponent<UIMapWindowController>();
+            }
+
+            if (definition.WindowId == DefaultTalentWindowId)
+            {
+                return windowObject.AddComponent<UITalentWindowController>();
+            }
+
+            if (definition.WindowId == DefaultUpgradeWindowId)
+            {
+                return windowObject.AddComponent<UIUpgradeWindowController>();
             }
 
             return windowObject.AddComponent<GenericWindowController>();
@@ -307,7 +359,7 @@ namespace IdleonGame.UI
             if (scaler != null)
             {
                 scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-                scaler.referenceResolution = new Vector2(1920f, 1080f);
+                scaler.referenceResolution = new Vector2(1280f, 720f);
                 scaler.matchWidthOrHeight = 0.5f;
             }
         }

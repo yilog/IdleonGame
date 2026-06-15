@@ -21,7 +21,6 @@ namespace IdleonGame.Player
         private readonly List<TilemapNavigationNode> path = new List<TilemapNavigationNode>();
         private int currentIndex;
         private bool isNavigating;
-        private bool isWaitingForClimbExit;
 
         public bool IsNavigating => isNavigating;
 
@@ -89,8 +88,6 @@ namespace IdleonGame.Player
                 }
 
                 climb.StopClimbingForNavigation();
-                isWaitingForClimbExit = true;
-                return true;
             }
 
             if (Mathf.Abs(delta.x) > horizontalTolerance)
@@ -112,13 +109,11 @@ namespace IdleonGame.Player
             if (!pathfinder.TryFindPath(transform.position, targetWorld, path))
             {
                 isNavigating = false;
-                isWaitingForClimbExit = false;
                 currentIndex = 0;
                 return false;
             }
 
             currentIndex = path.Count > 1 ? 1 : 0;
-            isWaitingForClimbExit = false;
             isNavigating = path.Count > 0;
             return isNavigating;
         }
@@ -126,7 +121,6 @@ namespace IdleonGame.Player
         public void StopNavigation()
         {
             isNavigating = false;
-            isWaitingForClimbExit = false;
             currentIndex = 0;
             path.Clear();
         }
@@ -190,7 +184,6 @@ namespace IdleonGame.Player
                 }
 
                 isNavigating = false;
-                isWaitingForClimbExit = false;
                 currentIndex = 0;
                 path.Clear();
             }
@@ -198,38 +191,8 @@ namespace IdleonGame.Player
 
         private bool HasReachedWaypoint(TilemapNavigationNode target, Vector3 targetWorld)
         {
-            if (target.Kind == NavigationNodeKind.Stand && climb != null && climb.IsClimbing)
-            {
-                return false;
-            }
-
-            if (isWaitingForClimbExit && target.Kind == NavigationNodeKind.Stand)
-            {
-                if (climb != null && !climb.IsClimbing && climb.IsGroundedForNavigation)
-                {
-                    isWaitingForClimbExit = false;
-                    return Mathf.Abs(transform.position.x - targetWorld.x) <= horizontalTolerance;
-                }
-
-                return false;
-            }
-
-            if (currentIndex > 0 && Mathf.Abs(transform.position.x - targetWorld.x) <= horizontalTolerance)
-            {
-                var previous = path[currentIndex - 1];
-                var isVerticalRopeStep = target.Kind == NavigationNodeKind.Rope || (climb != null && climb.IsClimbing);
-                if (isVerticalRopeStep && target.Cell.y > previous.Cell.y)
-                {
-                    return transform.position.y >= targetWorld.y - waypointTolerance;
-                }
-
-                if (isVerticalRopeStep && target.Cell.y < previous.Cell.y)
-                {
-                    return transform.position.y <= targetWorld.y + waypointTolerance;
-                }
-            }
-
-            return Vector2.Distance(transform.position, targetWorld) <= waypointTolerance;
+            return Mathf.Abs(transform.position.x - targetWorld.x) <= horizontalTolerance
+                && Mathf.Abs(transform.position.y - targetWorld.y) <= waypointTolerance;
         }
 
         private void FindSceneReferences()

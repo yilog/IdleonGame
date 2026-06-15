@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 229dce01cef04174b906605bcc99a804, type: 3}
+  m_Name: archer_arrow_power
+  m_EditorClassIdentifier: 
+  talentId: archer_arrow_power
+  displayName: Arrow Power
+  description: Increases arrow skill damage.
+  icon: {fileID: 21300000, guid: 5682db93eba82d9449efe35d238b614b, type: 3}
+  talentType: 1
+  classType: 2
+  maxLevel: 100
+  effectType: 2
+  upgradeEffectDescription: Each level increases arrow damage by 2%.

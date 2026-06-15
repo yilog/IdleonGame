@@ -47,12 +47,7 @@ namespace IdleonGame.Navigation
         public Vector3 GetNodeWorldPosition(TilemapNavigationNode node)
         {
             var center = groundTilemap.GetCellCenterWorld(node.Cell);
-            if (node.Kind == NavigationNodeKind.Stand)
-            {
-                return center + Vector3.down * (groundTilemap.layoutGrid.cellSize.y * 0.5f);
-            }
-
-            return center;
+            return center + Vector3.down * (groundTilemap.layoutGrid.cellSize.y * 0.5f);
         }
 
         private bool TryResolveClickedStandCell(Vector3 clickedWorld, out Vector3Int standCell)

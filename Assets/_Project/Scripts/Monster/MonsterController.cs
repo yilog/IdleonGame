@@ -4,6 +4,7 @@ using IdleonGame.Data;
 using IdleonGame.Core;
 using IdleonGame.Items;
 using IdleonGame.Levels;
+using IdleonGame.UI;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -124,9 +125,11 @@ namespace IdleonGame.Monster
                 return;
             }
 
-            stats.ApplyDamage(damageInfo.FinalDamage);
+            var appliedDamage = stats.ApplyDamage(damageInfo.FinalDamage);
+            UICombatFeedbackManager.EnsureExists().ShowMonsterDamage(this, appliedDamage);
             if (stats.IsDead)
             {
+                UICombatFeedbackManager.Instance?.HideHealthBar(this);
                 Die();
                 return;
             }
@@ -162,7 +165,20 @@ namespace IdleonGame.Monster
                 name,
                 gameObject.scene);
 
-            PlayerRuntimeDataService.Instance?.RecordMonsterKill(definition != null ? definition.MonsterId : null);
+            if (definition != null
+                && definition.MaxCurrencyDrop > 0
+                && Random.value <= definition.CurrencyDropChance)
+            {
+                var currencyAmount = Random.Range(definition.MinCurrencyDrop, definition.MaxCurrencyDrop + 1);
+                WorldItemDropper.SpawnCurrency(currencyAmount, transform.position, name, targetScene: gameObject.scene);
+            }
+
+            var runtimeData = PlayerRuntimeDataService.Instance;
+            runtimeData?.RecordMonsterKill(definition != null ? definition.MonsterId : null);
+            if (definition != null && definition.ExperienceReward > 0d)
+            {
+                runtimeData?.AddExperience(definition.ExperienceReward);
+            }
 
             var spriteRenderer = GetComponentInChildren<SpriteRenderer>();
             if (spriteRenderer != null)

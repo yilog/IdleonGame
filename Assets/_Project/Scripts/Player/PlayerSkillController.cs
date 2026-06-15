@@ -17,7 +17,7 @@ namespace IdleonGame.Player
         [SerializeField] private CharacterStats stats;
         [SerializeField] private PlayerAnimator playerAnimator;
         [SerializeField] private LayerMask targetLayers;
-        [SerializeField] private Vector3 arrowOffset = new(0, 0.5f, 0);
+        [SerializeField] private Vector3 arrowOffset = new(0, 0.55f, 0);
         [SerializeField] private string arrowPrefabPath = DefaultArrowPrefabPath;
 
         private readonly Collider2D[] hitResults = new Collider2D[8];

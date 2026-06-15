@@ -21,6 +21,7 @@ MonoBehaviour:
   maxMana: 0
   attackPower: 2
   defense: 0
+  experienceReward: 100
   attackType: 1
   moveSpeed: 3
   idleChance: 0.35
@@ -30,6 +31,9 @@ MonoBehaviour:
   maxMoveDuration: 3
   canAttack: 0
   deathDestroyDelay: 2
+  currencyDropChance: 0.8
+  minCurrencyDrop: 5
+  maxCurrencyDrop: 10
   drops:
   - itemId: test_drop_item
     minCount: 1

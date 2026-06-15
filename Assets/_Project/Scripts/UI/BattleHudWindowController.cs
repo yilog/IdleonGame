@@ -24,6 +24,7 @@ namespace IdleonGame.UI
         [SerializeField] private Button inventoryButton;
         [SerializeField] private Button talentButton;
         [SerializeField] private Button mapButton;
+        [SerializeField] private Button upgradeButton;
         [SerializeField] private Sprite noClassIcon;
         [SerializeField] private Sprite warriorIcon;
         [SerializeField] private Sprite archerIcon;
@@ -88,6 +89,12 @@ namespace IdleonGame.UI
                 mapButton.onClick.RemoveListener(OnMapButtonClicked);
                 mapButton.onClick.AddListener(OnMapButtonClicked);
             }
+
+            if (upgradeButton != null)
+            {
+                upgradeButton.onClick.RemoveListener(OnUpgradeButtonClicked);
+                upgradeButton.onClick.AddListener(OnUpgradeButtonClicked);
+            }
         }
 
         public void OnAutoHuntButtonClicked()
@@ -110,12 +117,17 @@ namespace IdleonGame.UI
 
         public void OnTalentButtonClicked()
         {
-            Debug.Log("Talent button clicked. Talent window is not implemented yet.");
+            Manager?.OpenWindow(UITalentWindowController.WindowIdConst);
         }
 
         public void OnMapButtonClicked()
         {
             Manager?.OpenWindow(UIMapWindowController.WindowIdConst);
+        }
+
+        public void OnUpgradeButtonClicked()
+        {
+            Manager?.OpenWindow(UIUpgradeWindowController.WindowIdConst);
         }
 
         private void RefreshReferences()
@@ -155,8 +167,8 @@ namespace IdleonGame.UI
             var currentHealth = Mathf.Clamp(runtime.currentHealth, 0, maxHealth);
             var maxMana = Mathf.Max(0, runtime.maxMana);
             var currentMana = Mathf.Clamp(runtime.currentMana, 0, maxMana);
-            var xpMax = Mathf.Max(1, runtime.experienceToNextLevel);
-            var currentXp = Mathf.Clamp(runtime.experience, 0, xpMax);
+            var xpMax = System.Math.Max(1d, runtime.experienceToNextLevel);
+            var currentXp = System.Math.Min(System.Math.Max(0d, runtime.experience), xpMax);
 
             SetText(playerNameText, runtime.playerName);
             SetText(classNameText, GetClassName(runtime.playerClass));
@@ -201,11 +213,11 @@ namespace IdleonGame.UI
             };
         }
 
-        private static void SetFill(Image image, int current, int max)
+        private static void SetFill(Image image, double current, double max)
         {
             if (image != null)
             {
-                image.fillAmount = max > 0 ? Mathf.Clamp01((float)current / max) : 0f;
+                image.fillAmount = max > 0 ? Mathf.Clamp01((float)(current / max)) : 0f;
             }
         }
 
@@ -217,14 +229,24 @@ namespace IdleonGame.UI
             }
         }
 
-        private static string FormatNumber(int value)
+        private static string FormatNumber(double value)
         {
-            if (value >= 1000)
+            if (value >= 1000000000d)
             {
-                return $"{value / 1000}K";
+                return $"{Mathf.FloorToInt((float)(value / 1000000000d))}B";
             }
 
-            return value.ToString();
+            if (value >= 1000000d)
+            {
+                return $"{Mathf.FloorToInt((float)(value / 1000000d))}M";
+            }
+
+            if (value >= 1000d)
+            {
+                return $"{Mathf.FloorToInt((float)(value / 1000d))}K";
+            }
+
+            return Mathf.FloorToInt((float)value).ToString();
         }
     }
 }

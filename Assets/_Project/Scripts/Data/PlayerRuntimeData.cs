@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using IdleonGame.Talents;
 
 namespace IdleonGame.Data
 {
@@ -15,11 +16,15 @@ namespace IdleonGame.Data
         public int baseAttack = 6;
         public int defense = 1;
         public int level = 1;
-        public int experience;
-        public int experienceToNextLevel = 280000;
+        public double experience;
+        public double experienceToNextLevel = 50;
+        public int talentUpgradePoints;
+        public int coins = 234567;
         public string currentLevelId = "level1_1";
         public List<string> unlockedLevelIds = new() { "level1_1" };
         public List<MonsterKillCountData> monsterKillCounts = new();
+        public List<PlayerTalentLevelData> talentLevels = new();
+        public List<PlayerUpgradeLevelData> upgradeLevels = new();
 
         public bool IsLevelUnlocked(string levelId)
         {
@@ -70,6 +75,80 @@ namespace IdleonGame.Data
 
             monsterKillCounts.Add(new MonsterKillCountData { monsterId = monsterId, count = amount });
         }
+
+        public int GetTalentLevel(string talentId)
+        {
+            if (string.IsNullOrEmpty(talentId))
+            {
+                return 0;
+            }
+
+            foreach (var entry in talentLevels)
+            {
+                if (entry != null && entry.talentId == talentId)
+                {
+                    return Math.Max(0, entry.level);
+                }
+            }
+
+            return 0;
+        }
+
+        public void SetTalentLevel(string talentId, int level)
+        {
+            if (string.IsNullOrEmpty(talentId))
+            {
+                return;
+            }
+
+            foreach (var entry in talentLevels)
+            {
+                if (entry != null && entry.talentId == talentId)
+                {
+                    entry.level = Math.Max(0, level);
+                    return;
+                }
+            }
+
+            talentLevels.Add(new PlayerTalentLevelData { talentId = talentId, level = Math.Max(0, level) });
+        }
+
+        public int GetUpgradeLevel(string upgradeId)
+        {
+            if (string.IsNullOrEmpty(upgradeId))
+            {
+                return 0;
+            }
+
+            foreach (var entry in upgradeLevels)
+            {
+                if (entry != null && entry.upgradeId == upgradeId)
+                {
+                    return Math.Max(0, entry.level);
+                }
+            }
+
+            return 0;
+        }
+
+        public void SetUpgradeLevel(string upgradeId, int level)
+        {
+            if (string.IsNullOrEmpty(upgradeId))
+            {
+                return;
+            }
+
+            foreach (var entry in upgradeLevels)
+            {
+                if (entry != null && entry.upgradeId == upgradeId)
+                {
+                    entry.level = Math.Max(0, level);
+                    return;
+                }
+            }
+
+            upgradeLevels.Add(new PlayerUpgradeLevelData { upgradeId = upgradeId, level = Math.Max(0, level) });
+        }
     }
 
     [Serializable]
@@ -77,5 +156,19 @@ namespace IdleonGame.Data
     {
         public string monsterId;
         public int count;
+    }
+
+    [Serializable]
+    public sealed class PlayerTalentLevelData
+    {
+        public string talentId;
+        public int level;
+    }
+
+    [Serializable]
+    public sealed class PlayerUpgradeLevelData
+    {
+        public string upgradeId;
+        public int level;
     }
 }

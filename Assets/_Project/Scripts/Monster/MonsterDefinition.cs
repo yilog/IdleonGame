@@ -47,6 +47,7 @@ namespace IdleonGame.Monster
         [SerializeField] private int maxMana;
         [SerializeField] private int attackPower = 0;
         [SerializeField] private int defense;
+        [SerializeField] private double experienceReward;
         [SerializeField] private MonsterAttackType attackType = MonsterAttackType.None;
         [SerializeField] private float moveSpeed = 1.25f;
         [SerializeField, Range(0f, 1f)] private float idleChance = 0.35f;
@@ -56,6 +57,9 @@ namespace IdleonGame.Monster
         [SerializeField] private float maxMoveDuration = 3.5f;
         [SerializeField] private bool canAttack;
         [SerializeField] private float deathDestroyDelay = 2f;
+        [SerializeField, Range(0f, 1f)] private float currencyDropChance;
+        [SerializeField] private int minCurrencyDrop;
+        [SerializeField] private int maxCurrencyDrop;
         [SerializeField] private MonsterDropEntry[] drops = Array.Empty<MonsterDropEntry>();
 
         public string MonsterId => monsterId;
@@ -67,6 +71,7 @@ namespace IdleonGame.Monster
         public int MaxMana => maxMana;
         public int AttackPower => attackPower;
         public int Defense => defense;
+        public double ExperienceReward => Math.Max(0d, experienceReward);
         public MonsterAttackType AttackType => attackType;
         public float MoveSpeed => moveSpeed;
         public float IdleChance => Mathf.Clamp01(idleChance);
@@ -76,6 +81,9 @@ namespace IdleonGame.Monster
         public float MaxMoveDuration => Mathf.Max(MinMoveDuration, maxMoveDuration);
         public bool CanAttack => canAttack;
         public float DeathDestroyDelay => deathDestroyDelay;
+        public float CurrencyDropChance => Mathf.Clamp01(currencyDropChance);
+        public int MinCurrencyDrop => Mathf.Max(0, minCurrencyDrop);
+        public int MaxCurrencyDrop => Mathf.Max(MinCurrencyDrop, maxCurrencyDrop);
         public MonsterDropEntry[] Drops => drops;
 
 #if UNITY_EDITOR
@@ -89,6 +97,7 @@ namespace IdleonGame.Monster
             int mana,
             int attack,
             int armor,
+            double killExperience,
             MonsterAttackType type,
             float speed,
             float idleProbability,
@@ -98,7 +107,10 @@ namespace IdleonGame.Monster
             float maxMove,
             bool attacks,
             float destroyDelay,
-            MonsterDropEntry[] dropTable)
+            MonsterDropEntry[] dropTable,
+            float coinDropChance = 0f,
+            int minCoins = 0,
+            int maxCoins = 0)
         {
             monsterId = id;
             displayName = name;
@@ -109,6 +121,7 @@ namespace IdleonGame.Monster
             maxMana = mana;
             attackPower = attack;
             defense = armor;
+            experienceReward = Math.Max(0d, killExperience);
             attackType = type;
             moveSpeed = speed;
             idleChance = Mathf.Clamp01(idleProbability);
@@ -118,6 +131,9 @@ namespace IdleonGame.Monster
             maxMoveDuration = Mathf.Max(minMoveDuration, maxMove);
             canAttack = attacks;
             deathDestroyDelay = destroyDelay;
+            currencyDropChance = Mathf.Clamp01(coinDropChance);
+            minCurrencyDrop = Mathf.Max(0, minCoins);
+            maxCurrencyDrop = Mathf.Max(minCurrencyDrop, maxCoins);
             drops = dropTable ?? Array.Empty<MonsterDropEntry>();
         }
 #endif

@@ -87,6 +87,7 @@ namespace IdleonGame.Editor
                 0,
                 0,
                 0,
+                0d,
                 MonsterAttackType.None,
                 1.25f,
                 0.35f,

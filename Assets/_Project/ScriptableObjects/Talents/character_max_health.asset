@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 229dce01cef04174b906605bcc99a804, type: 3}
+  m_Name: character_max_health
+  m_EditorClassIdentifier: 
+  talentId: character_max_health
+  displayName: Health Booster
+  description: Increases Max HP.
+  icon: {fileID: 21300000, guid: 90fa6f2143fc06f4ca214c4a295bedb4, type: 3}
+  talentType: 0
+  classType: 0
+  maxLevel: 100
+  effectType: 0
+  upgradeEffectDescription: Each level increases Max HP by 1 + level x 0.1.

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using IdleonGame.Levels;
 using IdleonGame.Map;
+using IdleonGame.Character;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
@@ -13,8 +14,6 @@ namespace IdleonGame.Player
     public sealed class PlayerClimb : MonoBehaviour, ILevelSceneReferenceClient
     {
         [SerializeField] private float climbSpeed = 3f;
-        [SerializeField] private float descendGrabDistance = 0.65f;
-        [SerializeField] private float climbThroughProbeDistance = 0.2f;
         [SerializeField] private float groundCheckDistance = 0.08f;
         [SerializeField] private float minimumGroundNormalY = 0.65f;
         [SerializeField] private RopeTilemap ropeTilemap;
@@ -37,6 +36,7 @@ namespace IdleonGame.Player
         {
             body = GetComponent<Rigidbody2D>();
             bodyCollider = GetComponent<BoxCollider2D>();
+            ConfigureDefaults();
             FindSceneReferences();
         }
 
@@ -45,6 +45,7 @@ namespace IdleonGame.Player
             body = GetComponent<Rigidbody2D>();
             bodyCollider = GetComponent<BoxCollider2D>();
             originalGravityScale = body.gravityScale;
+            ConfigureDefaults();
             FindSceneReferences();
         }
 
@@ -112,10 +113,7 @@ namespace IdleonGame.Player
 
         private void FixedUpdate()
         {
-            var canGrabRopeBelow = CanGrabRopeBelow();
-            var isOnRope = IsOnRope();
-
-            if (!isClimbing && CanStartClimb(isOnRope, canGrabRopeBelow))
+            if (!isClimbing && CanStartClimb())
             {
                 BeginClimb();
             }
@@ -125,77 +123,37 @@ namespace IdleonGame.Player
                 return;
             }
 
-            if (verticalInput < -0.1f && IsBlockedByNonRopeGroundTile(verticalInput))
+            if (!HasRopeAtFoot() && !HasRopeBelowFoot())
             {
                 EndClimb();
                 return;
             }
 
-            var verticalVelocity = GetAllowedClimbInput() * climbSpeed;
-            UpdateGroundCollisionMode(canGrabRopeBelow, verticalVelocity);
-
-            if (!IsOnRope() && !CanGrabRopeBelow())
-            {
-                EndClimb();
-                return;
-            }
-
+            var allowedInput = GetAllowedVerticalInput();
             body.gravityScale = 0f;
-            body.velocity = new Vector2(0f, verticalVelocity);
+            body.velocity = new Vector2(0f, allowedInput * climbSpeed);
+            AlignToRopeColumn();
+            SetGroundCollisionsIgnored(true);
 
-            if (Mathf.Abs(verticalInput) <= 0.1f && CanRestoreGroundCollisions())
+            if (Mathf.Abs(allowedInput) <= 0.1f && Mathf.Abs(verticalInput) > 0.1f && IsGrounded())
             {
                 EndClimb();
             }
         }
 
-        private bool CanStartClimb(bool isOnRope, bool canGrabRopeBelow)
+        private bool CanStartClimb()
         {
             if (Mathf.Abs(verticalInput) <= 0.1f)
             {
                 return false;
             }
 
-            if (canGrabRopeBelow || CanDescendFromGroundedRope(isOnRope))
+            if (verticalInput > 0.1f)
             {
-                return true;
+                return HasRopeAtFoot();
             }
 
-            if (!isOnRope)
-            {
-                return false;
-            }
-
-            return verticalInput > 0.1f || !IsGrounded();
-        }
-
-        private bool CanDescendFromGroundedRope(bool isOnRope)
-        {
-            if (!isOnRope || verticalInput >= -0.1f || ropeTilemap == null || bodyCollider == null)
-            {
-                return false;
-            }
-
-            var bounds = bodyCollider.bounds;
-            var feetCell = ropeTilemap.WorldToCell(new Vector2(bounds.center.x, bounds.min.y + 0.05f));
-            return ropeTilemap.HasRopeAtCell(feetCell + Vector3Int.down);
-        }
-
-        private bool IsOnRope()
-        {
-            return ropeTilemap != null && ropeTilemap.HasRopeNearBounds(bodyCollider.bounds);
-        }
-
-        private bool CanGrabRopeBelow()
-        {
-            if (ropeTilemap == null || bodyCollider == null || verticalInput >= -0.1f)
-            {
-                return false;
-            }
-
-            var bounds = bodyCollider.bounds;
-            var belowFeet = new Vector2(bounds.center.x, bounds.min.y - descendGrabDistance);
-            return ropeTilemap.HasRopeAtWorldPosition(belowFeet);
+            return HasRopeAtFoot() || HasRopeBelowFoot();
         }
 
         private void BeginClimb()
@@ -203,6 +161,8 @@ namespace IdleonGame.Player
             isClimbing = true;
             body.gravityScale = 0f;
             body.velocity = Vector2.zero;
+            AlignToRopeColumn();
+            SetGroundCollisionsIgnored(true);
         }
 
         private void EndClimb()
@@ -212,76 +172,68 @@ namespace IdleonGame.Player
             SetGroundCollisionsIgnored(false);
         }
 
-        private float GetAllowedClimbInput()
+        private float GetAllowedVerticalInput()
         {
             if (Mathf.Abs(verticalInput) <= 0.1f)
             {
                 return 0f;
             }
 
-            return IsBlockedByNonRopeGroundTile(verticalInput) ? 0f : verticalInput;
-        }
-
-        private bool IsBlockedByNonRopeGroundTile(float direction)
-        {
-            if (groundTilemap == null || ropeTilemap == null || bodyCollider == null || Mathf.Abs(direction) <= 0.1f)
+            if (verticalInput > 0.1f)
             {
-                return false;
+                return CanMoveUp() ? verticalInput : 0f;
             }
 
-            var bounds = bodyCollider.bounds;
-            var sampleY = direction > 0f
-                ? bounds.max.y + climbThroughProbeDistance
-                : bounds.min.y - climbThroughProbeDistance;
-            var cell = groundTilemap.WorldToCell(new Vector2(bounds.center.x, sampleY));
-
-            return groundTilemap.HasTile(cell) && !ropeTilemap.HasRopeAtCell(cell);
+            return CanMoveDown() ? verticalInput : 0f;
         }
 
-        private void UpdateGroundCollisionMode(bool canGrabRopeBelow, float verticalVelocity)
+        private bool CanMoveUp()
         {
-            var shouldIgnore = canGrabRopeBelow || IsOverlappingGroundRopeCell() || IsApproachingGroundRopeCell(verticalVelocity);
+            var footCell = GetFootCell();
+            return HasRopeAtCell(footCell) || HasRopeAtCell(footCell + Vector3Int.up);
+        }
 
-            if (!shouldIgnore && !CanRestoreGroundCollisions())
+        private bool CanMoveDown()
+        {
+            var footCell = GetFootCell();
+            return HasRopeAtCell(footCell) || HasRopeAtCell(footCell + Vector3Int.down);
+        }
+
+        private bool HasRopeAtFoot()
+        {
+            return HasRopeAtCell(GetFootCell());
+        }
+
+        private bool HasRopeBelowFoot()
+        {
+            return HasRopeAtCell(GetFootCell() + Vector3Int.down);
+        }
+
+        private bool HasRopeAtCell(Vector3Int cell)
+        {
+            return ropeTilemap != null && ropeTilemap.HasRopeAtCell(cell);
+        }
+
+        private Vector3Int GetFootCell()
+        {
+            if (ropeTilemap != null)
             {
-                shouldIgnore = true;
+                return ropeTilemap.WorldToCell(transform.position);
             }
 
-            SetGroundCollisionsIgnored(shouldIgnore);
+            return groundTilemap != null ? groundTilemap.WorldToCell(transform.position) : Vector3Int.zero;
         }
 
-        private bool IsOverlappingGroundRopeCell()
+        private void AlignToRopeColumn()
         {
-            if (ropeTilemap == null || groundTilemap == null || bodyCollider == null)
+            if (ropeTilemap == null)
             {
-                return false;
+                return;
             }
 
-            var bounds = bodyCollider.bounds;
-            return IsGroundRopeCellAt(new Vector2(bounds.center.x, bounds.center.y))
-                || IsGroundRopeCellAt(new Vector2(bounds.center.x, bounds.max.y - 0.05f))
-                || IsGroundRopeCellAt(new Vector2(bounds.center.x, bounds.min.y + 0.05f));
-        }
-
-        private bool IsApproachingGroundRopeCell(float verticalVelocity)
-        {
-            if (bodyCollider == null || Mathf.Abs(verticalVelocity) <= 0.01f)
-            {
-                return false;
-            }
-
-            var bounds = bodyCollider.bounds;
-            var sampleY = verticalVelocity > 0f
-                ? bounds.max.y + climbThroughProbeDistance
-                : bounds.min.y - climbThroughProbeDistance;
-
-            return IsGroundRopeCellAt(new Vector2(bounds.center.x, sampleY));
-        }
-
-        private bool IsGroundRopeCellAt(Vector2 worldPosition)
-        {
-            var cell = groundTilemap.WorldToCell(worldPosition);
-            return groundTilemap.HasTile(cell) && ropeTilemap.HasRopeAtCell(cell);
+            var ropeCell = HasRopeAtFoot() ? GetFootCell() : GetFootCell() + Vector3Int.down;
+            var ropeCenter = ropeTilemap.GetCellCenterWorld(ropeCell);
+            transform.position = new Vector3(ropeCenter.x, transform.position.y, transform.position.z);
         }
 
         private void SetGroundCollisionsIgnored(bool shouldIgnore)
@@ -365,6 +317,22 @@ namespace IdleonGame.Player
             }
 
             return false;
+        }
+
+        private void ConfigureDefaults()
+        {
+            if (body != null)
+            {
+                body.freezeRotation = true;
+                body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+                body.interpolation = RigidbodyInterpolation2D.Interpolate;
+            }
+
+            if (bodyCollider != null)
+            {
+                bodyCollider.size = CharacterAnchor2D.PlayerColliderSize;
+                bodyCollider.offset = CharacterAnchor2D.PlayerColliderOffset;
+            }
         }
 
         private void FindSceneReferences()
