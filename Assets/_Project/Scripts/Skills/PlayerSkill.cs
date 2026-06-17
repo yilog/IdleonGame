@@ -1,3 +1,4 @@
+using IdleonGame.Character;
 using IdleonGame.Combat;
 using UnityEngine;
 
@@ -118,6 +119,11 @@ namespace IdleonGame.Skills
             OnCancel(context);
             State = SkillCastState.Idle;
             effectApplied = false;
+        }
+
+        public virtual bool IsTargetInRange(Transform ownerTransform, Damageable target, LayerMask targetLayers)
+        {
+            return target == null || !target.IsDead;
         }
 
         protected virtual bool CanBegin(SkillCastContext castContext)

@@ -19,8 +19,8 @@ MonoBehaviour:
   manaCost: 0
   cooldownSeconds: 2
   startupSeconds: 0.15
-  activeSeconds: 0.05
-  recoverySeconds: 0.2
+  activeSeconds: 0.15
+  recoverySeconds: 0.5
   canMoveDuringStartup: 1
   cancelStartupOnMove: 1
   canMoveDuringRecovery: 0

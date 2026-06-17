@@ -1,3 +1,4 @@
+using System.Collections;
 using IdleonGame.Data;
 using IdleonGame.Upgrades;
 using UnityEngine;
@@ -21,6 +22,13 @@ namespace IdleonGame.Items
         [SerializeField] private Sprite copperCoinSprite;
         [SerializeField] private Sprite silverCoinSprite;
         [SerializeField] private Sprite goldCoinSprite;
+        [SerializeField] private float pickupRiseDistance = 0.8f;
+        [SerializeField] private float pickupFadeDuration = 0.45f;
+
+        private bool isPickedUp;
+
+        public bool IsCurrency => pickupKind == WorldPickupKind.Currency;
+        public bool IsPickedUp => isPickedUp;
 
         public void Configure(string droppedItemId, int itemCount)
         {
@@ -50,11 +58,17 @@ namespace IdleonGame.Items
 
         public bool TryPickup(PlayerInventory inventory = null)
         {
+            if (isPickedUp)
+            {
+                return false;
+            }
+
             if (pickupKind == WorldPickupKind.Currency)
             {
+                isPickedUp = true;
                 PlayerRuntimeDataService.EnsureExists().AddCoins(currencyAmount);
                 Debug.Log($"Picked up coins: {CurrencyFormatter.Format(currencyAmount)}. Current coins: {CurrencyFormatter.Format(PlayerRuntimeDataService.Instance.Data.coins)}");
-                Destroy(gameObject);
+                BeginPickupPresentation();
                 return true;
             }
 
@@ -74,9 +88,49 @@ namespace IdleonGame.Items
                 return false;
             }
 
+            isPickedUp = true;
             Debug.Log($"Picked up {itemId} x{count}. {inventory.GetInventorySummary()}");
-            Destroy(gameObject);
+            BeginPickupPresentation();
             return true;
+        }
+
+        private void BeginPickupPresentation()
+        {
+            var itemCollider = GetComponent<Collider2D>();
+            if (itemCollider != null)
+            {
+                itemCollider.enabled = false;
+            }
+
+            StartCoroutine(PlayPickupPresentation());
+        }
+
+        private IEnumerator PlayPickupPresentation()
+        {
+            var spriteRenderer = GetComponent<SpriteRenderer>();
+            var startPosition = transform.position;
+            var endPosition = startPosition + Vector3.up * Mathf.Max(0f, pickupRiseDistance);
+            var duration = Mathf.Max(0.05f, pickupFadeDuration);
+            var elapsed = 0f;
+            var startColor = spriteRenderer != null ? spriteRenderer.color : Color.white;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                var t = Mathf.Clamp01(elapsed / duration);
+                transform.position = Vector3.Lerp(startPosition, endPosition, t);
+
+                if (spriteRenderer != null)
+                {
+                    var color = startColor;
+                    color.a = Mathf.Lerp(startColor.a, 0f, t);
+                    spriteRenderer.color = color;
+                }
+
+                yield return null;
+            }
+
+            Destroy(gameObject);
         }
 
         private void UpdateSprite()

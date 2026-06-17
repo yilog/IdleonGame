@@ -1,6 +1,7 @@
 using IdleonGame.Character;
 using IdleonGame.Items;
 using IdleonGame.Levels;
+using IdleonGame.Markers;
 using IdleonGame.Map;
 using IdleonGame.UI;
 using UnityEngine;
@@ -16,17 +17,27 @@ namespace IdleonGame.Player
         [SerializeField] private PlayerAutoNavigator autoNavigator;
         [SerializeField] private PlayerInventory inventory;
         [SerializeField] private KeyCode autoHuntKey = KeyCode.L;
+        [SerializeField] private float attackNavigationRepathDistance = 0.5f;
+        [SerializeField] private float attackNavigationRepathInterval = 0.4f;
 
         private readonly Collider2D[] clickResults = new Collider2D[16];
         private Damageable pendingAttackTarget;
         private MapPortal pendingPortal;
+        private PlayerAutoNavigator subscribedNavigator;
         private bool isAutoHunting;
+        private Vector3 lastAttackNavigationTargetWorld;
+        private float nextAttackNavigationRepathTime;
 
         public bool IsAutoHunting => isAutoHunting;
 
         private void Awake()
         {
             FindReferences();
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeNavigator();
         }
 
         private void Update()
@@ -39,6 +50,7 @@ namespace IdleonGame.Player
             if (isAutoHunting && pendingAttackTarget == null)
             {
                 pendingAttackTarget = FindNearestMonster();
+                ResetAttackNavigationState();
             }
 
             if (pendingAttackTarget != null)
@@ -49,6 +61,14 @@ namespace IdleonGame.Player
             if (pendingPortal != null)
             {
                 UpdatePendingPortal();
+            }
+
+            if (UnityEngine.Input.GetMouseButton(0))
+            {
+                if (!UIInputBlocker.ShouldBlockScenePointerInput() && TryPickupWorldItemUnderMouse())
+                {
+                    return;
+                }
             }
 
             if (UnityEngine.Input.GetMouseButtonDown(0))
@@ -77,6 +97,8 @@ namespace IdleonGame.Player
             var portal = FindClickedPortal(hitCount, clickPoint);
             if (portal != null)
             {
+                SceneMarkerManager.EnsureExists().HideMoveTarget();
+                SceneMarkerManager.EnsureExists().HideAttackTargetImmediately();
                 HandlePortalClick(portal);
                 return;
             }
@@ -84,6 +106,7 @@ namespace IdleonGame.Player
             var monster = FindClickedMonster(hitCount, clickPoint);
             if (monster != null)
             {
+                SceneMarkerManager.EnsureExists().HideMoveTarget();
                 HandleMonsterClick(monster);
                 return;
             }
@@ -92,13 +115,23 @@ namespace IdleonGame.Player
             if (item != null)
             {
                 pendingAttackTarget = null;
+                SceneMarkerManager.EnsureExists().HideAttackTargetImmediately();
+                SceneMarkerManager.EnsureExists().HideMoveTarget();
                 item.TryPickup(inventory);
                 return;
             }
 
             pendingAttackTarget = null;
             pendingPortal = null;
-            autoNavigator?.TryNavigateToWorldPosition(mouseWorld);
+            SceneMarkerManager.EnsureExists().HideAttackTargetImmediately();
+            if (autoNavigator != null && autoNavigator.TryNavigateToWorldPosition(mouseWorld))
+            {
+                SceneMarkerManager.EnsureExists().ShowMoveTarget(autoNavigator.CurrentDestinationWorld);
+            }
+            else
+            {
+                SceneMarkerManager.EnsureExists().HideMoveTarget();
+            }
         }
 
         public void OnLevelSceneWillUnload(Scene scene)
@@ -112,12 +145,15 @@ namespace IdleonGame.Player
             if (pendingComponent != null && pendingComponent.gameObject.scene == scene)
             {
                 pendingAttackTarget = null;
+                SceneMarkerManager.EnsureExists().HideAttackTargetImmediately();
             }
 
             if (pendingPortal != null && pendingPortal.gameObject.scene == scene)
             {
                 pendingPortal = null;
             }
+
+            SceneMarkerManager.EnsureExists().HideMoveTarget();
         }
 
         public void OnLevelSceneLoaded(Scene scene)
@@ -134,21 +170,25 @@ namespace IdleonGame.Player
         {
             pendingPortal = null;
             pendingAttackTarget = monster;
+            ResetAttackNavigationState();
+            SceneMarkerManager.EnsureExists().ShowAttackTarget(monster);
             if (attack != null && attack.TryUseRangedAttack(monster))
             {
+                SceneMarkerManager.EnsureExists().RequestHideAttackTarget(monster);
                 return;
             }
 
             var targetTransform = (monster as Component)?.transform;
             if (targetTransform != null && autoNavigator != null)
             {
-                autoNavigator.TryNavigateToWorldPosition(targetTransform.position);
+                TryNavigateToAttackTarget(targetTransform.position, true);
             }
         }
 
         private void HandlePortalClick(MapPortal portal)
         {
             pendingAttackTarget = null;
+            SceneMarkerManager.EnsureExists().HideAttackTargetImmediately();
             if (!portal.IsActive)
             {
                 pendingPortal = null;
@@ -175,6 +215,8 @@ namespace IdleonGame.Player
             if (pendingAttackTarget.IsDead)
             {
                 pendingAttackTarget = null;
+                ResetAttackNavigationState();
+                SceneMarkerManager.EnsureExists().HideAttackTargetImmediately();
                 return;
             }
 
@@ -188,14 +230,17 @@ namespace IdleonGame.Player
                 var targetTransform = (pendingAttackTarget as Component)?.transform;
                 if (targetTransform != null)
                 {
-                    autoNavigator?.TryNavigateToWorldPosition(targetTransform.position);
+                    TryNavigateToAttackTarget(targetTransform.position, false);
                 }
 
                 return;
             }
 
             autoNavigator?.StopNavigation();
-            attack.TryUseRangedAttack(pendingAttackTarget);
+            if (attack.TryUseRangedAttack(pendingAttackTarget))
+            {
+                SceneMarkerManager.EnsureExists().RequestHideAttackTarget(pendingAttackTarget);
+            }
         }
 
         public void ToggleAutoHunt()
@@ -209,7 +254,10 @@ namespace IdleonGame.Player
             if (!isAutoHunting)
             {
                 pendingAttackTarget = null;
+                ResetAttackNavigationState();
                 pendingPortal = null;
+                SceneMarkerManager.EnsureExists().HideAttackTargetImmediately();
+                SceneMarkerManager.EnsureExists().HideMoveTarget();
                 autoNavigator?.StopNavigation();
             }
         }
@@ -233,6 +281,7 @@ namespace IdleonGame.Player
         {
             var portal = pendingPortal;
             pendingPortal = null;
+            SceneMarkerManager.EnsureExists().HideMoveTarget();
             autoNavigator?.StopNavigation();
             portal.TryActivate();
         }
@@ -266,6 +315,26 @@ namespace IdleonGame.Player
             return bestTarget;
         }
 
+
+        private bool TryPickupWorldItemUnderMouse()
+        {
+            FindReferences();
+            if (inputCamera == null)
+            {
+                return false;
+            }
+
+            var mouseWorld = inputCamera.ScreenToWorldPoint(UnityEngine.Input.mousePosition);
+            var clickPoint = new Vector2(mouseWorld.x, mouseWorld.y);
+            var hitCount = Physics2D.OverlapPointNonAlloc(clickPoint, clickResults);
+            var item = FindClickedPickupItem(hitCount, clickPoint);
+            if (item == null)
+            {
+                return false;
+            }
+
+            return item.TryPickup(inventory);
+        }
         private WorldItemPickup FindClickedItem(int hitCount, Vector2 clickPoint)
         {
             WorldItemPickup bestItem = null;
@@ -279,7 +348,7 @@ namespace IdleonGame.Player
                 }
 
                 var item = hit.GetComponentInParent<WorldItemPickup>();
-                if (item == null)
+                if (item == null || item.IsPickedUp)
                 {
                     continue;
                 }
@@ -295,6 +364,35 @@ namespace IdleonGame.Player
             return bestItem;
         }
 
+
+        private WorldItemPickup FindClickedPickupItem(int hitCount, Vector2 clickPoint)
+        {
+            WorldItemPickup bestItem = null;
+            var bestDistance = float.PositiveInfinity;
+            for (var i = 0; i < hitCount; i++)
+            {
+                var hit = clickResults[i];
+                if (hit == null)
+                {
+                    continue;
+                }
+
+                var item = hit.GetComponentInParent<WorldItemPickup>();
+                if (item == null || item.IsPickedUp)
+                {
+                    continue;
+                }
+
+                var distance = Vector2.Distance(clickPoint, hit.ClosestPoint(clickPoint));
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    bestItem = item;
+                }
+            }
+
+            return bestItem;
+        }
         private MapPortal FindClickedPortal(int hitCount, Vector2 clickPoint)
         {
             MapPortal bestPortal = null;
@@ -348,6 +446,46 @@ namespace IdleonGame.Player
             return nearest;
         }
 
+        private void TryNavigateToAttackTarget(Vector3 targetWorld, bool force)
+        {
+            if (autoNavigator == null || (!force && !ShouldRepathToAttackTarget(targetWorld)))
+            {
+                return;
+            }
+
+            if (autoNavigator.TryNavigateToWorldPosition(targetWorld))
+            {
+                lastAttackNavigationTargetWorld = targetWorld;
+                nextAttackNavigationRepathTime = Time.time + Mathf.Max(0.05f, attackNavigationRepathInterval);
+            }
+        }
+
+        private bool ShouldRepathToAttackTarget(Vector3 targetWorld)
+        {
+            if (autoNavigator == null)
+            {
+                return false;
+            }
+
+            if (!autoNavigator.IsNavigating)
+            {
+                return true;
+            }
+
+            if (Time.time < nextAttackNavigationRepathTime)
+            {
+                return false;
+            }
+
+            return Vector2.Distance(lastAttackNavigationTargetWorld, targetWorld) >= Mathf.Max(0.05f, attackNavigationRepathDistance);
+        }
+
+        private void ResetAttackNavigationState()
+        {
+            lastAttackNavigationTargetWorld = transform.position;
+            nextAttackNavigationRepathTime = 0f;
+        }
+
         private void FindReferences()
         {
             if (inputCamera == null)
@@ -365,10 +503,47 @@ namespace IdleonGame.Player
                 autoNavigator = GetComponent<PlayerAutoNavigator>();
             }
 
+            SubscribeNavigator(autoNavigator);
+
             if (inventory == null)
             {
                 inventory = GetComponent<PlayerInventory>();
             }
+        }
+
+        private void SubscribeNavigator(PlayerAutoNavigator navigator)
+        {
+            if (subscribedNavigator == navigator)
+            {
+                return;
+            }
+
+            UnsubscribeNavigator();
+            subscribedNavigator = navigator;
+            if (subscribedNavigator == null)
+            {
+                return;
+            }
+
+            subscribedNavigator.NavigationCompleted += OnNavigationFinished;
+            subscribedNavigator.NavigationStopped += OnNavigationFinished;
+        }
+
+        private void UnsubscribeNavigator()
+        {
+            if (subscribedNavigator == null)
+            {
+                return;
+            }
+
+            subscribedNavigator.NavigationCompleted -= OnNavigationFinished;
+            subscribedNavigator.NavigationStopped -= OnNavigationFinished;
+            subscribedNavigator = null;
+        }
+
+        private void OnNavigationFinished()
+        {
+            SceneMarkerManager.EnsureExists().HideMoveTarget();
         }
     }
 }

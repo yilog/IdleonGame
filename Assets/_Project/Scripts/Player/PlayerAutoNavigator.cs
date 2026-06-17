@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using IdleonGame.Levels;
 using IdleonGame.Navigation;
@@ -15,14 +16,18 @@ namespace IdleonGame.Player
         [SerializeField] private PlayerClimb climb;
         [SerializeField] private bool handleMouseClickInput;
         [SerializeField] private float waypointTolerance = 0.05f;
-        [SerializeField] private float horizontalTolerance = 0.03f;
+        [SerializeField] private float horizontalTolerance = 0.05f;
         [SerializeField] private float verticalTolerance = 0.03f;
 
         private readonly List<TilemapNavigationNode> path = new List<TilemapNavigationNode>();
         private int currentIndex;
         private bool isNavigating;
+        private Vector3 currentDestinationWorld;
 
         public bool IsNavigating => isNavigating;
+        public Vector3 CurrentDestinationWorld => currentDestinationWorld;
+        public event Action NavigationCompleted;
+        public event Action NavigationStopped;
 
         private void Awake()
         {
@@ -108,21 +113,26 @@ namespace IdleonGame.Player
 
             if (!pathfinder.TryFindPath(transform.position, targetWorld, path))
             {
-                isNavigating = false;
-                currentIndex = 0;
+                StopNavigation();
                 return false;
             }
 
             currentIndex = path.Count > 1 ? 1 : 0;
             isNavigating = path.Count > 0;
+            currentDestinationWorld = isNavigating ? pathfinder.GetNodeWorldPosition(path[path.Count - 1]) : transform.position;
             return isNavigating;
         }
 
         public void StopNavigation()
         {
+            var wasNavigating = isNavigating;
             isNavigating = false;
             currentIndex = 0;
             path.Clear();
+            if (wasNavigating)
+            {
+                NavigationStopped?.Invoke();
+            }
         }
 
         public void OnLevelSceneWillUnload(Scene scene)
@@ -186,6 +196,7 @@ namespace IdleonGame.Player
                 isNavigating = false;
                 currentIndex = 0;
                 path.Clear();
+                NavigationCompleted?.Invoke();
             }
         }
 

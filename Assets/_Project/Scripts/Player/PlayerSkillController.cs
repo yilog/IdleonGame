@@ -21,8 +21,8 @@ namespace IdleonGame.Player
         [SerializeField] private string arrowPrefabPath = DefaultArrowPrefabPath;
 
         private readonly Collider2D[] hitResults = new Collider2D[8];
-        private MeleeAttackSkill basicAttackSkill;
-        private ArrowProjectileSkill rangedAttackSkill;
+        private PlayerSkill basicAttackSkill;
+        private PlayerSkill rangedAttackSkill;
         private PlayerSkill activeSkill;
         private int facingDirection = 1;
         private float movementInputMagnitude;
@@ -98,7 +98,7 @@ namespace IdleonGame.Player
 
         public bool IsTargetInRangedAttackRange(Damageable target)
         {
-            return rangedAttackSkill != null && rangedAttackSkill.IsTargetInRange(transform, target);
+            return rangedAttackSkill != null && rangedAttackSkill.IsTargetInRange(transform, target, targetLayers);
         }
 
         public bool IsBasicAttackReady()
@@ -186,9 +186,24 @@ namespace IdleonGame.Player
 
         private void RebuildSkills()
         {
-            basicAttackSkill = basicAttack != null ? new MeleeAttackSkill(basicAttack, hitResults) : null;
-            rangedAttackSkill = rangedAttack != null ? new ArrowProjectileSkill(rangedAttack, arrowPrefabPath, arrowOffset) : null;
+            basicAttackSkill = CreateSkill(basicAttack);
+            rangedAttackSkill = CreateSkill(rangedAttack);
             activeSkill = null;
+        }
+
+        private PlayerSkill CreateSkill(AttackDefinition definition)
+        {
+            if (definition == null)
+            {
+                return null;
+            }
+
+            return definition.SkillType switch
+            {
+                AttackSkillType.BasicMelee => new MeleeAttackSkill(definition, hitResults),
+                AttackSkillType.RangedProjectile => new ArrowProjectileSkill(definition, arrowPrefabPath, arrowOffset),
+                _ => null
+            };
         }
 
         private static void IgnorePlayerMonsterCollision()

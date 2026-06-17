@@ -205,6 +205,18 @@ namespace IdleonGame.Data
             SaveIfNeeded();
         }
 
+        public void SetPlayerClass(PlayerClassType playerClass)
+        {
+            EnsureRuntimeDefaults();
+            if (data.playerClass == playerClass)
+            {
+                return;
+            }
+
+            data.playerClass = playerClass;
+            SaveIfNeeded();
+        }
+
         public void Save()
         {
             PlayerPrefs.SetString(PlayerPrefsKey, JsonUtility.ToJson(data));

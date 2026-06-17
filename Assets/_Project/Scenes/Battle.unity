@@ -299,7 +299,7 @@ MonoBehaviour:
   battleController: {fileID: 1601274549}
   loadingOverlay: {fileID: 1601274547}
   initialLevelId: level1_1
-  debugSwitchKey: 105
+  debugSwitchKey: 289
 --- !u!114 &1601274549
 MonoBehaviour:
   m_ObjectHideFlags: 0

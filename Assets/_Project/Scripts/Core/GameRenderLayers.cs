@@ -13,6 +13,7 @@ namespace IdleonGame.Core
             public const int Player = 50;
             public const int Projectile = 55;
             public const int WorldItem = 60;
+            public const int SceneMarker = 70;
         }
     }
 }

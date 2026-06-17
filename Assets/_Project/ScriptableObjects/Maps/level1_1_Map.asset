@@ -50,3 +50,39 @@ MonoBehaviour:
       height: 1
     targetSceneId: level1_2
     targetSpawnPointId: default
+  - portalId: portal_to_level1_3
+    triggerArea:
+      serializedVersion: 2
+      x: -6.5
+      y: -2.5
+      width: 1
+      height: 1
+    targetSceneId: level1_3
+    targetSpawnPointId: default
+  - portalId: portal_to_level2_1
+    triggerArea:
+      serializedVersion: 2
+      x: -2.5
+      y: -2.5
+      width: 1
+      height: 1
+    targetSceneId: level2_1
+    targetSpawnPointId: default
+  - portalId: portal_to_level2_2
+    triggerArea:
+      serializedVersion: 2
+      x: 1.5
+      y: -2.5
+      width: 1
+      height: 1
+    targetSceneId: level2_2
+    targetSpawnPointId: default
+  - portalId: portal_to_level2_3
+    triggerArea:
+      serializedVersion: 2
+      x: 5.5
+      y: -2.5
+      width: 1
+      height: 1
+    targetSceneId: level2_3
+    targetSpawnPointId: default

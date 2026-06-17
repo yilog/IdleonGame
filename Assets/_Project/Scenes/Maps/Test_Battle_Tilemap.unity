@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0.37311953, g: 0.38074014, b: 0.3587274, a: 1}
+  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -393,6 +393,16 @@ Tilemap:
       m_TileObjectToInstantiateIndex: 65535
       dummyAlignment: 0
       m_AllTileFlags: 1
+  - first: {x: 2, y: -1, z: 0}
+    second:
+      serializedVersion: 2
+      m_TileIndex: 1
+      m_TileSpriteIndex: 1
+      m_TileMatrixIndex: 0
+      m_TileColorIndex: 0
+      m_TileObjectToInstantiateIndex: 65535
+      dummyAlignment: 0
+      m_AllTileFlags: 1
   - first: {x: -2, y: 0, z: 0}
     second:
       serializedVersion: 2
@@ -427,11 +437,15 @@ Tilemap:
   m_TileAssetArray:
   - m_RefCount: 4
     m_Data: {fileID: 11400000, guid: da53c719390c1a945aa8cb2c3106d5dd, type: 2}
+  - m_RefCount: 1
+    m_Data: {fileID: 11400000, guid: 14a2613e2a7ea144f8ade2ff631772d5, type: 2}
   m_TileSpriteArray:
   - m_RefCount: 4
     m_Data: {fileID: 21300000, guid: 078ca4540010e734da2a46c6fdc68ad0, type: 3}
+  - m_RefCount: 1
+    m_Data: {fileID: 21300000, guid: 7688edd1f0106234eb35cdd84d65aa82, type: 3}
   m_TileMatrixArray:
-  - m_RefCount: 4
+  - m_RefCount: 5
     m_Data:
       e00: 1
       e01: 0
@@ -450,7 +464,7 @@ Tilemap:
       e32: 0
       e33: 1
   m_TileColorArray:
-  - m_RefCount: 4
+  - m_RefCount: 5
     m_Data: {r: 1, g: 1, b: 1, a: 1}
   m_TileObjectToInstantiateArray: []
   m_AnimationFrameRate: 1
@@ -1929,6 +1943,7 @@ GameObject:
   - component: {fileID: 889339486}
   - component: {fileID: 889339488}
   - component: {fileID: 889339489}
+  - component: {fileID: 889339490}
   m_Layer: 8
   m_Name: Player_TestBlock
   m_TagString: Untagged
@@ -1952,6 +1967,7 @@ MonoBehaviour:
   climb: {fileID: 889339484}
   autoNavigator: {fileID: 889339485}
   attack: {fileID: 0}
+  skillController: {fileID: 0}
 --- !u!114 &889339479
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1988,7 +2004,7 @@ BoxCollider2D:
   m_Offset: {x: 0, y: 0}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
-    pivot: {x: 0.5, y: 0.5}
+    pivot: {x: 0.5, y: 0}
     oldSize: {x: 1, y: 1}
     newSize: {x: 1, y: 1}
     adaptiveTilingThreshold: 0.5
@@ -2099,8 +2115,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   climbSpeed: 3
-  descendGrabDistance: 0.65
-  climbThroughProbeDistance: 0.035
   groundCheckDistance: 0.08
   minimumGroundNormalY: 0.65
   ropeTilemap: {fileID: 0}
@@ -2139,12 +2153,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   basicAttack: {fileID: 11400000, guid: af9eb06da71778d46bcafa6183bf82a3, type: 2}
   rangedAttack: {fileID: 11400000, guid: 0bf7717f0d5dc1e42bbd4e622c71fc7f, type: 2}
-  stats: {fileID: 889339487}
   targetLayers:
     serializedVersion: 2
     m_Bits: 512
   basicAttackKey: 106
   rangedAttackKey: 107
+  skillController: {fileID: 0}
 --- !u!114 &889339487
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2194,6 +2208,27 @@ MonoBehaviour:
   autoNavigator: {fileID: 0}
   inventory: {fileID: 0}
   autoHuntKey: 108
+--- !u!114 &889339490
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 889339477}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6a6497749fa21e24bb440e4ecfaa7632, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  basicAttack: {fileID: 0}
+  rangedAttack: {fileID: 0}
+  stats: {fileID: 889339487}
+  playerAnimator: {fileID: 0}
+  targetLayers:
+    serializedVersion: 2
+    m_Bits: 512
+  arrowOffset: {x: 0, y: 0.55, z: 0}
+  arrowPrefabPath: Prefabs/Projectiles/Arrow
 --- !u!1 &1299602622
 GameObject:
   m_ObjectHideFlags: 0

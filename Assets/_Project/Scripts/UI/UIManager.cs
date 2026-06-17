@@ -13,8 +13,11 @@ namespace IdleonGame.UI
         private const string DefaultMapWindowId = UIMapWindowController.WindowIdConst;
         private const string DefaultTalentWindowId = UITalentWindowController.WindowIdConst;
         private const string DefaultUpgradeWindowId = UIUpgradeWindowController.WindowIdConst;
+        private const string DefaultInventoryWindowId = UIInventoryWindowController.WindowIdConst;
+        private const string DefaultEquipmentWindowId = UIEquipmentWindowController.WindowIdConst;
         private const int FullscreenBaseOrder = 1000;
         private const int FloatingBaseOrder = 2000;
+        private const int ModalBlockerOrder = FloatingBaseOrder - 1;
 
         [SerializeField] private Canvas rootCanvas;
         [SerializeField] private RectTransform fullscreenRoot;
@@ -28,6 +31,8 @@ namespace IdleonGame.UI
         [SerializeField] private KeyCode mapWindowKey = KeyCode.M;
         [SerializeField] private bool enableUpgradeWindowHotkey = true;
         [SerializeField] private KeyCode upgradeWindowKey = KeyCode.O;
+        [SerializeField] private bool enableInventoryWindowHotkey = true;
+        [SerializeField] private KeyCode inventoryWindowKey = KeyCode.I;
         [SerializeField] private List<UIWindowDefinition> windows = new();
 
         private readonly Dictionary<string, UIWindowDefinition> definitions = new();
@@ -75,6 +80,12 @@ namespace IdleonGame.UI
             if (enableUpgradeWindowHotkey && UnityEngine.Input.GetKeyDown(upgradeWindowKey))
             {
                 OpenWindow(DefaultUpgradeWindowId);
+            }
+
+            if (enableInventoryWindowHotkey && UnityEngine.Input.GetKeyDown(inventoryWindowKey))
+            {
+                OpenWindow(DefaultInventoryWindowId);
+                OpenWindow(DefaultEquipmentWindowId);
             }
         }
 
@@ -211,6 +222,16 @@ namespace IdleonGame.UI
             {
                 definitions[DefaultUpgradeWindowId] = new UIWindowDefinition(DefaultUpgradeWindowId, null, "Prefabs/UI/UIUpgrade", UIWindowMode.Floating, true, false);
             }
+
+            if (!definitions.ContainsKey(DefaultInventoryWindowId))
+            {
+                definitions[DefaultInventoryWindowId] = new UIWindowDefinition(DefaultInventoryWindowId, null, "Prefabs/UI/UIInventory", UIWindowMode.Floating, true, false);
+            }
+
+            if (!definitions.ContainsKey(DefaultEquipmentWindowId))
+            {
+                definitions[DefaultEquipmentWindowId] = new UIWindowDefinition(DefaultEquipmentWindowId, null, "Prefabs/UI/UIEquipment", UIWindowMode.Floating, true, false);
+            }
         }
 
         private void OpenStartupWindows()
@@ -244,6 +265,16 @@ namespace IdleonGame.UI
             if (windowId == DefaultUpgradeWindowId)
             {
                 return new UIWindowDefinition(DefaultUpgradeWindowId, null, "Prefabs/UI/UIUpgrade", UIWindowMode.Floating, true, false);
+            }
+
+            if (windowId == DefaultInventoryWindowId)
+            {
+                return new UIWindowDefinition(DefaultInventoryWindowId, null, "Prefabs/UI/UIInventory", UIWindowMode.Floating, true, false);
+            }
+
+            if (windowId == DefaultEquipmentWindowId)
+            {
+                return new UIWindowDefinition(DefaultEquipmentWindowId, null, "Prefabs/UI/UIEquipment", UIWindowMode.Floating, true, false);
             }
 
             return new UIWindowDefinition(windowId, null, null, UIWindowMode.Floating, true, false);
@@ -293,6 +324,18 @@ namespace IdleonGame.UI
                 return windowObject;
             }
 
+            if (definition.WindowId == DefaultInventoryWindowId)
+            {
+                windowObject.AddComponent<UIInventoryWindowController>();
+                return windowObject;
+            }
+
+            if (definition.WindowId == DefaultEquipmentWindowId)
+            {
+                windowObject.AddComponent<UIEquipmentWindowController>();
+                return windowObject;
+            }
+
             windowObject.AddComponent<GenericWindowController>();
             return windowObject;
         }
@@ -322,6 +365,16 @@ namespace IdleonGame.UI
             if (definition.WindowId == DefaultUpgradeWindowId)
             {
                 return windowObject.AddComponent<UIUpgradeWindowController>();
+            }
+
+            if (definition.WindowId == DefaultInventoryWindowId)
+            {
+                return windowObject.AddComponent<UIInventoryWindowController>();
+            }
+
+            if (definition.WindowId == DefaultEquipmentWindowId)
+            {
+                return windowObject.AddComponent<UIEquipmentWindowController>();
             }
 
             return windowObject.AddComponent<GenericWindowController>();
@@ -392,11 +445,27 @@ namespace IdleonGame.UI
                 modalBlocker = blockerObject.AddComponent<Image>();
                 blockerObject.AddComponent<Canvas>();
                 blockerObject.AddComponent<GraphicRaycaster>();
+                blockerObject.AddComponent<ModalBlockerClickHandler>();
             }
+
+            var clickHandler = modalBlocker.GetComponent<ModalBlockerClickHandler>();
+            if (clickHandler == null)
+            {
+                clickHandler = modalBlocker.gameObject.AddComponent<ModalBlockerClickHandler>();
+            }
+
+            clickHandler.Initialize(this);
 
             modalBlocker.color = new Color(0f, 0f, 0f, 0.35f);
             modalBlocker.raycastTarget = true;
             SetStretchIfRectTransform(modalBlocker.rectTransform, UIWindowMode.Fullscreen);
+            var blockerCanvas = modalBlocker.GetComponent<Canvas>();
+            if (blockerCanvas != null)
+            {
+                blockerCanvas.overrideSorting = true;
+                blockerCanvas.sortingOrder = ModalBlockerOrder;
+            }
+
             modalBlocker.gameObject.SetActive(false);
         }
 
@@ -431,7 +500,16 @@ namespace IdleonGame.UI
             if (blockerCanvas != null)
             {
                 blockerCanvas.overrideSorting = true;
-                blockerCanvas.sortingOrder = topModal.SortingOrder - 1;
+                blockerCanvas.sortingOrder = ModalBlockerOrder;
+            }
+        }
+
+        private void CloseTopModalWindow()
+        {
+            var topModal = FindTopModalWindow();
+            if (topModal != null)
+            {
+                CloseWindow(topModal.WindowId);
             }
         }
 
@@ -447,6 +525,21 @@ namespace IdleonGame.UI
             }
 
             return null;
+        }
+
+        private sealed class ModalBlockerClickHandler : MonoBehaviour, IPointerClickHandler
+        {
+            private UIManager manager;
+
+            public void Initialize(UIManager owner)
+            {
+                manager = owner;
+            }
+
+            public void OnPointerClick(PointerEventData eventData)
+            {
+                manager?.CloseTopModalWindow();
+            }
         }
 
         private static void SetStretchIfRectTransform(RectTransform rectTransform, UIWindowMode mode)

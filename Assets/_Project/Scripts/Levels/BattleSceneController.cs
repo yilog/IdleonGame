@@ -22,6 +22,7 @@ namespace IdleonGame.Levels
 
         private GameObject player;
         private Sprite runtimePlayerSprite;
+        private PlayerClassPresentationDefinition cachedPresentation;
 
         public GameObject Player => player;
 
@@ -30,6 +31,11 @@ namespace IdleonGame.Levels
             PlayerRuntimeDataService.EnsureExists();
             UIManager.EnsureExists();
             EnsurePlayer();
+        }
+
+        private void Start()
+        {
+            SwitchPlayerClass(PlayerClassType.Warrior);
         }
 
         public GameObject EnsurePlayer()
@@ -65,6 +71,28 @@ namespace IdleonGame.Levels
             currentPlayer.GetComponent<PlayerClimb>()?.StopClimbingForNavigation();
         }
 
+        public bool SwitchPlayerClass(PlayerClassType playerClass)
+        {
+            var runtimeData = PlayerRuntimeDataService.EnsureExists();
+            runtimeData.SetPlayerClass(playerClass);
+            cachedPresentation = null;
+
+            var currentPlayer = EnsurePlayer();
+            currentPlayer.GetComponent<PlayerAutoNavigator>()?.StopNavigation();
+            currentPlayer.GetComponent<PlayerClimb>()?.StopClimbingForNavigation();
+            currentPlayer.GetComponent<PlayerSkillController>()?.CancelCurrentSkill();
+
+            var presentation = GetPlayerPresentation();
+            if (presentation == null)
+            {
+                return false;
+            }
+
+            ApplyPresentation(currentPlayer, presentation, true);
+            ConfigurePlayerSkills(currentPlayer);
+            return true;
+        }
+
         private GameObject CreatePlayer(Vector2 position)
         {
             var created = CreatePlayerRoot();
@@ -97,6 +125,7 @@ namespace IdleonGame.Levels
             EnsureComponent<CharacterStats>(created);
             EnsureComponent<PlayerRuntimeDataBinder>(created);
             EnsureComponent<PlayerInventory>(created);
+            EnsureComponent<PlayerEquipment>(created);
             EnsureComponent<PlayerClimb>(created);
             EnsureComponent<PlayerMovement>(created);
             EnsureComponent<PlayerAutoNavigator>(created);
@@ -110,7 +139,10 @@ namespace IdleonGame.Levels
 
         private GameObject CreatePlayerRoot()
         {
-            var prefab = Resources.Load<GameObject>(PlayerPrefabPath);
+            var presentation = GetPlayerPresentation();
+            var prefab = presentation != null && presentation.Prefab != null
+                ? presentation.Prefab
+                : Resources.Load<GameObject>(PlayerPrefabPath);
             if (prefab != null)
             {
                 return Instantiate(prefab);
@@ -122,15 +154,35 @@ namespace IdleonGame.Levels
 
         private void EnsurePresentationComponents(GameObject target)
         {
+            var presentation = GetPlayerPresentation();
+            ApplyPresentation(target, presentation, false);
+            EnsureComponent<PlayerAnimator>(target);
+        }
+
+        private void ApplyPresentation(GameObject target, PlayerClassPresentationDefinition presentation, bool force)
+        {
             var spriteRenderer = target.GetComponentInChildren<SpriteRenderer>();
             if (spriteRenderer == null)
             {
-                spriteRenderer = target.AddComponent<SpriteRenderer>();
+                var view = new GameObject("view");
+                view.transform.SetParent(target.transform, false);
+                spriteRenderer = view.AddComponent<SpriteRenderer>();
+            }
+
+            var sourceRenderer = presentation != null && presentation.Prefab != null
+                ? presentation.Prefab.GetComponentInChildren<SpriteRenderer>()
+                : null;
+            if (sourceRenderer != null)
+            {
+                spriteRenderer.sprite = sourceRenderer.sprite;
+                spriteRenderer.transform.localPosition = sourceRenderer.transform.localPosition;
+                spriteRenderer.transform.localScale = sourceRenderer.transform.localScale;
+            }
+            else if (spriteRenderer.sprite == null)
+            {
                 spriteRenderer.sprite = GetOrCreateRuntimePlayerSprite();
             }
 
-            //spriteRenderer.transform.localPosition = Vector3.zero;
-            //spriteRenderer.transform.localScale = Vector3.one;
             spriteRenderer.sortingOrder = GameRenderLayers.SortingOrders.Player;
 
             var animator = target.GetComponent<Animator>();
@@ -139,12 +191,13 @@ namespace IdleonGame.Levels
                 animator = target.AddComponent<Animator>();
             }
 
-            if (animator.runtimeAnimatorController == null)
+            var controller = presentation != null && presentation.AnimatorController != null
+                ? presentation.AnimatorController
+                : GetPlayerAnimatorController();
+            if (force || animator.runtimeAnimatorController == null)
             {
-                animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>(PlayerAnimatorControllerPath);
+                animator.runtimeAnimatorController = controller;
             }
-
-            EnsureComponent<PlayerAnimator>(target);
         }
 
         private static T EnsureComponent<T>(GameObject target) where T : Component
@@ -172,17 +225,49 @@ namespace IdleonGame.Levels
             EnsureComponent<PlayerRuntimeDataBinder>(target);
 
             EnsureComponent<PlayerSkillController>(target);
-            var attack = target.GetComponent<PlayerAttack>();
-            if (attack != null)
-            {
-                attack.Configure(basicAttack, rangedAttack, LayerMask.GetMask(GameLayerNames.Monster));
-            }
+            ConfigurePlayerSkills(target);
 
             var animator = target.GetComponent<Animator>();
             if (animator != null && animator.runtimeAnimatorController == null)
             {
-                animator.runtimeAnimatorController = Resources.Load<RuntimeAnimatorController>(PlayerAnimatorControllerPath);
+                animator.runtimeAnimatorController = GetPlayerAnimatorController();
             }
+        }
+
+        private void ConfigurePlayerSkills(GameObject target)
+        {
+            var attack = target.GetComponent<PlayerAttack>();
+            if (attack == null)
+            {
+                return;
+            }
+
+            var playerClass = PlayerRuntimeDataService.Instance != null
+                ? PlayerRuntimeDataService.Instance.Data.playerClass
+                : PlayerClassType.Archer;
+            var skillSet = PlayerClassSkillDatabase.Find(playerClass)
+                ?? PlayerClassSkillDatabase.Find(PlayerClassType.Archer);
+            var classBasicAttack = skillSet != null && skillSet.BasicAttack != null ? skillSet.BasicAttack : basicAttack;
+            var classSecondaryAttack = skillSet != null && skillSet.SecondaryAttack != null ? skillSet.SecondaryAttack : rangedAttack;
+            attack.Configure(classBasicAttack, classSecondaryAttack, LayerMask.GetMask(GameLayerNames.Monster));
+        }
+
+        private PlayerClassPresentationDefinition GetPlayerPresentation()
+        {
+            var playerClass = PlayerRuntimeDataService.Instance != null
+                ? PlayerRuntimeDataService.Instance.Data.playerClass
+                : PlayerClassType.Archer;
+            cachedPresentation = PlayerClassPresentationDatabase.Find(playerClass)
+                ?? PlayerClassPresentationDatabase.Find(PlayerClassType.Archer);
+            return cachedPresentation;
+        }
+
+        private RuntimeAnimatorController GetPlayerAnimatorController()
+        {
+            var presentation = cachedPresentation != null ? cachedPresentation : GetPlayerPresentation();
+            return presentation != null && presentation.AnimatorController != null
+                ? presentation.AnimatorController
+                : Resources.Load<RuntimeAnimatorController>(PlayerAnimatorControllerPath);
         }
 
         private Sprite GetOrCreateRuntimePlayerSprite()

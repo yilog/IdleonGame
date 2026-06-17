@@ -112,7 +112,8 @@ namespace IdleonGame.UI
 
         public void OnInventoryButtonClicked()
         {
-            Debug.Log("Inventory button clicked. Inventory window is not implemented yet.");
+            Manager?.OpenWindow(UIInventoryWindowController.WindowIdConst);
+            Manager?.OpenWindow(UIEquipmentWindowController.WindowIdConst);
         }
 
         public void OnTalentButtonClicked()

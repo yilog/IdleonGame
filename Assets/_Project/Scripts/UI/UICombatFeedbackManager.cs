@@ -11,6 +11,7 @@ namespace IdleonGame.UI
         private const string HealthBarPrefabPath = "Prefabs/UI/MonsterHealthBar";
         private const string DamageTextPrefabPath = "Prefabs/UI/DamageText";
         private const float HealthBarLifetimeSeconds = 5f;
+        private const int CombatFeedbackSortingOrder = -100;
 
         [SerializeField] private Canvas canvas;
         [SerializeField] private RectTransform canvasRoot;
@@ -240,7 +241,7 @@ namespace IdleonGame.UI
             canvasObject.transform.SetParent(transform, false);
             canvas = canvasObject.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 3000;
+            canvas.sortingOrder = CombatFeedbackSortingOrder;
             canvasRoot = canvasObject.GetComponent<RectTransform>();
             canvasRoot.anchorMin = Vector2.zero;
             canvasRoot.anchorMax = Vector2.one;

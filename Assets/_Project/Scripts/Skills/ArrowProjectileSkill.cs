@@ -17,7 +17,7 @@ namespace IdleonGame.Skills
             arrowOffset = offset;
         }
 
-        public bool IsTargetInRange(Transform ownerTransform, Damageable target)
+        public override bool IsTargetInRange(Transform ownerTransform, Damageable target, LayerMask targetLayers)
         {
             if (Definition == null || ownerTransform == null || target == null || target.IsDead)
             {
@@ -39,7 +39,7 @@ namespace IdleonGame.Skills
         protected override bool CanBegin(SkillCastContext castContext)
         {
             return base.CanBegin(castContext)
-                && (castContext.Target == null || IsTargetInRange(castContext.Owner.transform, castContext.Target));
+                && (castContext.Target == null || IsTargetInRange(castContext.Owner.transform, castContext.Target, castContext.TargetLayers));
         }
 
         protected override void ApplyEffect(SkillCastContext castContext)

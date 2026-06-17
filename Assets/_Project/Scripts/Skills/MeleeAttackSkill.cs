@@ -14,7 +14,7 @@ namespace IdleonGame.Skills
             hitResults = sharedHitResults;
         }
 
-        public bool IsTargetInRange(Transform ownerTransform, Damageable target, LayerMask targetLayers)
+        public override bool IsTargetInRange(Transform ownerTransform, Damageable target, LayerMask targetLayers)
         {
             if (Definition == null || ownerTransform == null || target == null || target.IsDead)
             {

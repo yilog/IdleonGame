@@ -36,5 +36,5 @@ MonoBehaviour:
   m_ColliderType: 0
   monsterId: rat
   minSpawnInterval: 5
-  maxMonsterCount: 10
-  randomRangeX: 0.5
+  maxMonsterCount: 8
+  randomRangeX: 10

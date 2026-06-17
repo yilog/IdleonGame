@@ -18,7 +18,7 @@ namespace IdleonGame.Levels
         [SerializeField] private BattleSceneController battleController;
         [SerializeField] private LoadingOverlay loadingOverlay;
         [SerializeField] private string initialLevelId = "level1_1";
-        [SerializeField] private KeyCode debugSwitchKey = KeyCode.I;
+        [SerializeField] private KeyCode debugSwitchKey = KeyCode.F8;
 
         private Scene currentLevelScene;
         private LevelDefinition currentLevel;
