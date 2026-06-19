@@ -19,6 +19,7 @@ namespace IdleonGame.Levels
         [SerializeField] private AttackDefinition basicAttack;
         [SerializeField] private AttackDefinition rangedAttack;
         [SerializeField] private Vector2 initialPlayerPosition = new(-8f, -2f);
+        [SerializeField] private KeyCode switchToArcherKey = KeyCode.T;
 
         private GameObject player;
         private Sprite runtimePlayerSprite;
@@ -36,6 +37,14 @@ namespace IdleonGame.Levels
         private void Start()
         {
             SwitchPlayerClass(PlayerClassType.Warrior);
+        }
+
+        private void Update()
+        {
+            if (UnityEngine.Input.GetKeyDown(switchToArcherKey))
+            {
+                SwitchPlayerClass(PlayerClassType.Archer);
+            }
         }
 
         public GameObject EnsurePlayer()

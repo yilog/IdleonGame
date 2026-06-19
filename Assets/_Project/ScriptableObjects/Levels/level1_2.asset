@@ -18,4 +18,7 @@ MonoBehaviour:
   scenePath: Assets/_Project/Scenes/Levels/level1_2.unity
   defaultSpawnPointId: default
   defaultSpawnPosition: {x: -8, y: -2}
-  unlockConditions: []
+  unlockConditions:
+  - conditionType: 1
+    monsterId: rat
+    requiredCount: 6

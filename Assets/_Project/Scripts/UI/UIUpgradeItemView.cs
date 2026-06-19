@@ -17,6 +17,7 @@ namespace IdleonGame.UI
 
         private UpgradeDefinition upgrade;
         private Action<UpgradeDefinition> upgradeClicked;
+        private UICurrencyAmountView costAmountView;
 
         public void Initialize(UpgradeDefinition definition, Action<UpgradeDefinition> onUpgradeClicked)
         {
@@ -50,7 +51,12 @@ namespace IdleonGame.UI
 
             SetText(nameText, upgrade.DisplayName);
             SetText(effectText, upgrade.GetNextEffectDescription(currentLevel));
-            SetText(costText, CurrencyFormatter.Format(cost));
+            costAmountView ??= UICurrencyAmountView.AttachTo(costText);
+            if (costAmountView != null)
+            {
+                costAmountView.SetAmount(cost);
+            }
+
             SetText(levelText, $"Lv {currentLevel}");
 
             if (upgradeButton != null)

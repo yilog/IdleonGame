@@ -19,7 +19,7 @@ namespace IdleonGame.Data
         public double experience;
         public double experienceToNextLevel = 50;
         public int talentUpgradePoints;
-        public int coins = 234567;
+        public int coins = 0;
         public string currentLevelId = "level1_1";
         public List<string> unlockedLevelIds = new() { "level1_1" };
         public List<MonsterKillCountData> monsterKillCounts = new();

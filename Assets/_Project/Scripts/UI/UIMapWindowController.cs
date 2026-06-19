@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using IdleonGame.Data;
 using IdleonGame.Levels;
 using UnityEngine;
@@ -17,8 +16,25 @@ namespace IdleonGame.UI
         [SerializeField] private Sprite lockedNodeSprite;
         [SerializeField] private Sprite currentNodeSprite;
         [SerializeField] private Sprite playerMarkerSprite;
+        [SerializeField] private string[] fixedLevelIds =
+        {
+            "level1_1",
+            "level1_2",
+            "level1_3",
+            "level2_1",
+            "level2_2",
+            "level2_3"
+        };
 
-        private readonly List<GameObject> spawnedNodes = new();
+        private static readonly string[] DefaultFixedLevelIds =
+        {
+            "level1_1",
+            "level1_2",
+            "level1_3",
+            "level2_1",
+            "level2_2",
+            "level2_3"
+        };
 
         protected override void OnOpen(object args)
         {
@@ -42,7 +58,6 @@ namespace IdleonGame.UI
 
         public void Refresh()
         {
-            ClearNodes();
             var runtimeData = PlayerRuntimeDataService.EnsureExists();
             var levelDatabase = LevelDatabase.Instance;
             runtimeData.RefreshLevelUnlocks(levelDatabase);
@@ -57,69 +72,72 @@ namespace IdleonGame.UI
                 return;
             }
 
-            var index = 0;
-            foreach (var level in levelDatabase.Levels)
+            var levelIds = fixedLevelIds != null && fixedLevelIds.Length > 0 ? fixedLevelIds : DefaultFixedLevelIds;
+            foreach (var levelId in levelIds)
             {
-                if (level == null)
+                if (string.IsNullOrEmpty(levelId))
                 {
                     continue;
                 }
 
-                CreateNode(level, index++, runtimeData);
+                RefreshNode(levelId, levelDatabase, runtimeData);
             }
         }
 
-        private void CreateNode(LevelDefinition level, int index, PlayerRuntimeDataService runtimeData)
+        private void RefreshNode(string levelId, LevelDatabase levelDatabase, PlayerRuntimeDataService runtimeData)
         {
-            var nodeObject = new GameObject($"{level.LevelId}_Node", typeof(RectTransform));
-            nodeObject.transform.SetParent(nodeRoot, false);
-            spawnedNodes.Add(nodeObject);
+            var node = FindNode(levelId);
+            if (node == null)
+            {
+                Debug.LogWarning($"UIMap missing fixed node for level id: {levelId}");
+                return;
+            }
 
-            var rect = nodeObject.GetComponent<RectTransform>();
-            var column = index % 3;
-            var row = index / 3;
-            rect.anchorMin = new Vector2(0f, 1f);
-            rect.anchorMax = new Vector2(0f, 1f);
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.sizeDelta = new Vector2(118f, 76f);
-            rect.anchoredPosition = new Vector2(120f + column * 170f, -92f - row * 118f);
+            var level = levelDatabase.GetLevel(levelId);
+            node.gameObject.SetActive(level != null);
+            if (level == null)
+            {
+                return;
+            }
 
             var isCurrent = runtimeData.Data.currentLevelId == level.LevelId;
             var isUnlocked = runtimeData.IsLevelUnlocked(level);
-            var image = nodeObject.AddComponent<Image>();
-            image.sprite = isCurrent ? currentNodeSprite : isUnlocked ? unlockedNodeSprite : lockedNodeSprite;
-            image.color = isUnlocked ? Color.white : new Color32(120, 120, 120, 255);
-            image.raycastTarget = true;
-
-            var button = nodeObject.AddComponent<Button>();
-            button.interactable = isUnlocked;
-            if (isUnlocked)
+            var image = node.GetComponent<Image>();
+            if (image != null)
             {
-                button.onClick.AddListener(() => OnLevelClicked(level.LevelId));
+                image.sprite = isCurrent ? currentNodeSprite : isUnlocked ? unlockedNodeSprite : lockedNodeSprite;
+                image.color = isUnlocked ? Color.white : new Color32(120, 120, 120, 255);
+                image.raycastTarget = true;
             }
 
-            var label = CreateText("Label", nodeObject.transform, level.DisplayName, 16, TextAnchor.MiddleCenter);
-            var labelRect = label.rectTransform;
-            labelRect.anchorMin = Vector2.zero;
-            labelRect.anchorMax = Vector2.one;
-            labelRect.offsetMin = new Vector2(6f, 6f);
-            labelRect.offsetMax = new Vector2(-6f, -6f);
-            label.color = isUnlocked ? Color.white : new Color32(210, 210, 210, 255);
-
-            if (isCurrent && playerMarkerSprite != null)
+            var button = node.GetComponent<Button>();
+            if (button != null)
             {
-                var markerObject = new GameObject("PlayerMarker", typeof(RectTransform));
-                markerObject.transform.SetParent(nodeObject.transform, false);
-                var marker = markerObject.AddComponent<Image>();
-                marker.sprite = playerMarkerSprite;
-                marker.raycastTarget = false;
+                button.onClick.RemoveAllListeners();
+                button.interactable = isUnlocked;
+                if (isUnlocked)
+                {
+                    button.onClick.AddListener(() => OnLevelClicked(level.LevelId));
+                }
+            }
 
-                var markerRect = markerObject.GetComponent<RectTransform>();
-                markerRect.anchorMin = new Vector2(0.5f, 1f);
-                markerRect.anchorMax = new Vector2(0.5f, 1f);
-                markerRect.pivot = new Vector2(0.5f, 0f);
-                markerRect.sizeDelta = new Vector2(28f, 28f);
-                markerRect.anchoredPosition = new Vector2(0f, 6f);
+            var labelTransform = node.Find("Label");
+            var label = labelTransform != null ? labelTransform.GetComponent<Text>() : null;
+            if (label != null)
+            {
+                label.text = level.DisplayName;
+                label.color = isUnlocked ? Color.white : new Color32(210, 210, 210, 255);
+            }
+
+            var markerTransform = node.Find("PlayerMarker");
+            if (markerTransform != null)
+            {
+                markerTransform.gameObject.SetActive(isCurrent);
+                var markerImage = markerTransform.GetComponent<Image>();
+                if (markerImage != null && playerMarkerSprite != null)
+                {
+                    markerImage.sprite = playerMarkerSprite;
+                }
             }
         }
 
@@ -156,31 +174,16 @@ namespace IdleonGame.UI
             }
         }
 
-        private void ClearNodes()
+        private RectTransform FindNode(string levelId)
         {
-            foreach (var node in spawnedNodes)
+            var direct = nodeRoot.Find($"{levelId}_Node") as RectTransform;
+            if (direct != null)
             {
-                if (node != null)
-                {
-                    Destroy(node);
-                }
+                return direct;
             }
 
-            spawnedNodes.Clear();
-        }
-
-        private static Text CreateText(string name, Transform parent, string text, int fontSize, TextAnchor alignment)
-        {
-            var textObject = new GameObject(name, typeof(RectTransform));
-            textObject.transform.SetParent(parent, false);
-            var label = textObject.AddComponent<Text>();
-            label.text = text;
-            label.font = Resources.GetBuiltinResource<Font>("Arial.ttf");
-            label.fontSize = fontSize;
-            label.alignment = alignment;
-            label.color = Color.white;
-            label.raycastTarget = false;
-            return label;
+            var fallback = nodeRoot.Find(levelId) as RectTransform;
+            return fallback;
         }
     }
 }

@@ -14,6 +14,8 @@ namespace IdleonGame.UI
         [SerializeField] private Button closeButton;
         [SerializeField] private UIUpgradeItemView upgradeItemPrefab;
 
+        private UICurrencyAmountView coinAmountView;
+
         protected override void OnOpen(object args)
         {
             var rectTransform = transform as RectTransform;
@@ -80,9 +82,10 @@ namespace IdleonGame.UI
         private void RefreshCoins()
         {
             var coins = PlayerRuntimeDataService.EnsureExists().Data.coins;
-            if (coinText != null)
+            coinAmountView ??= UICurrencyAmountView.AttachTo(coinText);
+            if (coinAmountView != null)
             {
-                coinText.text = $"Your Coins: {CurrencyFormatter.Format(coins)}";
+                coinAmountView.SetAmount(coins);
             }
         }
 

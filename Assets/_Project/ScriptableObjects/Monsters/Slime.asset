@@ -24,7 +24,7 @@ MonoBehaviour:
   experienceReward: 120
   attackType: 1
   moveSpeed: 2.2
-  idleChance: 0.45
+  idleChance: 0.628
   minIdleDuration: 1
   maxIdleDuration: 2.4
   minMoveDuration: 1.1
@@ -35,7 +35,7 @@ MonoBehaviour:
   minCurrencyDrop: 50
   maxCurrencyDrop: 80
   drops:
-  - itemId: test_drop_item
+  - itemId: slime_part
     minCount: 1
     maxCount: 1
     dropChance: 0.35

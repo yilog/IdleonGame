@@ -14,6 +14,7 @@ namespace IdleonGame.Core
             public const int Projectile = 55;
             public const int WorldItem = 60;
             public const int SceneMarker = 70;
+            public const int PortalRequirement = 75;
         }
     }
 }

@@ -21,6 +21,7 @@ namespace IdleonGame.Data
         public event Action<int, int> LevelUp;
         public event Action<string, int> TalentUpgraded;
         public event Action<string, int> UpgradePurchased;
+        public event Action<string, int> MonsterKillRecorded;
 
         private void Awake()
         {
@@ -310,8 +311,14 @@ namespace IdleonGame.Data
 
         public void RecordMonsterKill(string monsterId)
         {
+            if (string.IsNullOrEmpty(monsterId))
+            {
+                return;
+            }
+
             data.AddMonsterKill(monsterId);
             RefreshLevelUnlocks(LevelDatabase.Instance);
+            MonsterKillRecorded?.Invoke(monsterId, data.GetMonsterKillCount(monsterId));
             SaveIfNeeded();
         }
 

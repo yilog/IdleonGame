@@ -21,10 +21,10 @@ MonoBehaviour:
   maxMana: 0
   attackPower: 2
   defense: 0
-  experienceReward: 100
+  experienceReward: 50
   attackType: 1
-  moveSpeed: 3
-  idleChance: 0.35
+  moveSpeed: 2
+  idleChance: 0.575
   minIdleDuration: 0.8
   maxIdleDuration: 2
   minMoveDuration: 1.2
@@ -35,7 +35,7 @@ MonoBehaviour:
   minCurrencyDrop: 5
   maxCurrencyDrop: 10
   drops:
-  - itemId: test_drop_item
+  - itemId: rat_part
     minCount: 1
     maxCount: 1
     dropChance: 0.5

@@ -15,7 +15,7 @@ namespace IdleonGame.Editor
         {
             var data = new PlayerRuntimeData
             {
-                coins = 100 * CurrencyFormatter.CopperPerGold
+                coins = 0
             };
 
             PlayerPrefs.SetString(PlayerPrefsKey, JsonUtility.ToJson(data));

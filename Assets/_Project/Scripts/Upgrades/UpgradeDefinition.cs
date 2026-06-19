@@ -4,7 +4,8 @@ namespace IdleonGame.Upgrades
 {
     public enum UpgradeEffectType
     {
-        AttackDamage = 0
+        AttackDamage = 0,
+        MonsterCurrencyDropPercent = 1
     }
 
     [CreateAssetMenu(fileName = "UpgradeDefinition", menuName = "IdleonGame/Upgrade Definition")]
@@ -55,6 +56,7 @@ namespace IdleonGame.Upgrades
             return effectType switch
             {
                 UpgradeEffectType.AttackDamage => currentLevel + 1,
+                UpgradeEffectType.MonsterCurrencyDropPercent => 2,
                 _ => 0
             };
         }
@@ -64,6 +66,7 @@ namespace IdleonGame.Upgrades
             return effectType switch
             {
                 UpgradeEffectType.AttackDamage => Mathf.Max(0, currentLevel),
+                UpgradeEffectType.MonsterCurrencyDropPercent => Mathf.Max(0, currentLevel) * 2,
                 _ => 0
             };
         }
@@ -73,6 +76,7 @@ namespace IdleonGame.Upgrades
             return effectType switch
             {
                 UpgradeEffectType.AttackDamage => $"+{GetNextLevelEffectValue(currentLevel)} Damage",
+                UpgradeEffectType.MonsterCurrencyDropPercent => $"+{GetNextLevelEffectValue(currentLevel)}% Coins Dropped by Monsters",
                 _ => nextLevelDescription
             };
         }

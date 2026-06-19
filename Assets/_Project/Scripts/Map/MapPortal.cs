@@ -36,6 +36,14 @@ namespace IdleonGame.Map
             isActive = newIsActive;
             portalTilemap = newPortalTilemap;
             portalCell = newPortalCell;
+
+            var requirementView = GetComponent<MapPortalUnlockRequirementView>();
+            if (requirementView == null)
+            {
+                requirementView = gameObject.AddComponent<MapPortalUnlockRequirementView>();
+            }
+
+            requirementView.Configure(this, portalTilemap, portalCell);
         }
 
         public bool IsInPortalCell(Vector3 worldPosition)

@@ -19,6 +19,25 @@ namespace IdleonGame.Editor
         private const string LevelAssetFolder = "Assets/_Project/ScriptableObjects/Levels";
         private const string LevelSceneFolder = "Assets/_Project/Scenes/Levels";
         private const string LevelDatabasePath = "Assets/_Project/Resources/LevelDatabase.asset";
+        private static readonly string[] FixedLevelIds =
+        {
+            "level1_1",
+            "level1_2",
+            "level1_3",
+            "level2_1",
+            "level2_2",
+            "level2_3"
+        };
+
+        private static readonly Vector2[] FixedLevelNodePositions =
+        {
+            new(120f, -92f),
+            new(290f, -92f),
+            new(460f, -92f),
+            new(120f, -210f),
+            new(290f, -210f),
+            new(460f, -210f)
+        };
 
         [MenuItem("IdleonGame/UI/Create UIMap And Level Setup")]
         public static void CreateAssets()
@@ -36,7 +55,18 @@ namespace IdleonGame.Editor
             var playerMarker = CreateTexture("MapPlayerMarker", 32, 32, new Color32(246, 221, 92, 255), new Color32(214, 76, 48, 255));
 
             CreateUIMapPrefab(panel, mapBackground, unlockedNode, lockedNode, currentNode, playerMarker);
+            EnsureUIMapFixedNodes(unlockedNode, playerMarker);
             CreateLevelScenesAndDefinitions();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        [MenuItem("IdleonGame/UI/Ensure UIMap Fixed Nodes")]
+        public static void EnsureUIMapFixedNodes()
+        {
+            var unlockedNode = AssetDatabase.LoadAssetAtPath<Sprite>($"{UiTextureFolder}/MapNodeUnlocked.png");
+            var playerMarker = AssetDatabase.LoadAssetAtPath<Sprite>($"{UiTextureFolder}/MapPlayerMarker.png");
+            EnsureUIMapFixedNodes(unlockedNode, playerMarker);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
@@ -125,10 +155,111 @@ namespace IdleonGame.Editor
             serialized.FindProperty("lockedNodeSprite").objectReferenceValue = lockedNode;
             serialized.FindProperty("currentNodeSprite").objectReferenceValue = currentNode;
             serialized.FindProperty("playerMarkerSprite").objectReferenceValue = playerMarker;
+            SetFixedLevelIds(serialized);
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
+            EnsureFixedNodeObjects(nodeRoot, unlockedNode, playerMarker);
             PrefabUtility.SaveAsPrefabAsset(root, UiMapPrefabPath);
             Object.DestroyImmediate(root);
+        }
+
+        private static void EnsureUIMapFixedNodes(Sprite unlockedNode, Sprite playerMarker)
+        {
+            if (!File.Exists(UiMapPrefabPath))
+            {
+                Debug.LogWarning($"UIMap prefab does not exist yet: {UiMapPrefabPath}");
+                return;
+            }
+
+            var root = PrefabUtility.LoadPrefabContents(UiMapPrefabPath);
+            try
+            {
+                var controller = root.GetComponent<UIMapWindowController>();
+                var nodeRootTransform = root.transform.Find("Body/NodeRoot");
+                var nodeRoot = nodeRootTransform as RectTransform;
+                if (controller == null || nodeRoot == null)
+                {
+                    Debug.LogWarning("UIMap prefab is missing UIMapWindowController or Body/NodeRoot.");
+                    return;
+                }
+
+                EnsureFixedNodeObjects(nodeRoot, unlockedNode, playerMarker);
+
+                var serialized = new SerializedObject(controller);
+                serialized.FindProperty("nodeRoot").objectReferenceValue = nodeRoot;
+                SetFixedLevelIds(serialized);
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                PrefabUtility.SaveAsPrefabAsset(root, UiMapPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void EnsureFixedNodeObjects(RectTransform nodeRoot, Sprite unlockedNode, Sprite playerMarker)
+        {
+            for (var i = 0; i < FixedLevelIds.Length; i++)
+            {
+                var levelId = FixedLevelIds[i];
+                var node = nodeRoot.Find($"{levelId}_Node") as RectTransform;
+                if (node == null)
+                {
+                    node = CreateMapNode($"{levelId}_Node", nodeRoot, unlockedNode, playerMarker);
+                }
+
+                node.anchorMin = new Vector2(0f, 1f);
+                node.anchorMax = new Vector2(0f, 1f);
+                node.pivot = new Vector2(0.5f, 0.5f);
+                node.sizeDelta = new Vector2(118f, 76f);
+                node.anchoredPosition = FixedLevelNodePositions[i];
+            }
+        }
+
+        private static RectTransform CreateMapNode(string name, Transform parent, Sprite nodeSprite, Sprite playerMarker)
+        {
+            var nodeObject = new GameObject(name, typeof(RectTransform), typeof(Image), typeof(Button));
+            nodeObject.transform.SetParent(parent, false);
+            var node = nodeObject.GetComponent<RectTransform>();
+
+            var image = nodeObject.GetComponent<Image>();
+            image.sprite = nodeSprite;
+            image.type = Image.Type.Sliced;
+            image.raycastTarget = true;
+
+            var button = nodeObject.GetComponent<Button>();
+            button.transition = Selectable.Transition.ColorTint;
+
+            var label = CreateText("Label", nodeObject.transform, name.Replace("_Node", string.Empty), 16, TextAnchor.MiddleCenter);
+            label.rectTransform.offsetMin = new Vector2(6f, 6f);
+            label.rectTransform.offsetMax = new Vector2(-6f, -6f);
+
+            var markerObject = new GameObject("PlayerMarker", typeof(RectTransform), typeof(Image));
+            markerObject.transform.SetParent(nodeObject.transform, false);
+            var marker = markerObject.GetComponent<Image>();
+            marker.sprite = playerMarker;
+            marker.raycastTarget = false;
+            markerObject.SetActive(false);
+
+            var markerRect = markerObject.GetComponent<RectTransform>();
+            markerRect.anchorMin = new Vector2(0.5f, 1f);
+            markerRect.anchorMax = new Vector2(0.5f, 1f);
+            markerRect.pivot = new Vector2(0.5f, 0f);
+            markerRect.sizeDelta = new Vector2(28f, 28f);
+            markerRect.anchoredPosition = new Vector2(0f, 6f);
+
+            return node;
+        }
+
+        private static void SetFixedLevelIds(SerializedObject serialized)
+        {
+            var fixedLevelIds = serialized.FindProperty("fixedLevelIds");
+            fixedLevelIds.arraySize = FixedLevelIds.Length;
+            for (var i = 0; i < FixedLevelIds.Length; i++)
+            {
+                fixedLevelIds.GetArrayElementAtIndex(i).stringValue = FixedLevelIds[i];
+            }
         }
 
         private static RectTransform CreateRect(string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax, Vector2 anchoredPosition, Vector2 sizeDelta)

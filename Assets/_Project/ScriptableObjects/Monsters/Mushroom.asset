@@ -21,10 +21,10 @@ MonoBehaviour:
   maxMana: 0
   attackPower: 4
   defense: 1
-  experienceReward: 140
+  experienceReward: 180
   attackType: 1
   moveSpeed: 1.6
-  idleChance: 0.5
+  idleChance: 0.812
   minIdleDuration: 1.2
   maxIdleDuration: 2.8
   minMoveDuration: 1
@@ -35,7 +35,7 @@ MonoBehaviour:
   minCurrencyDrop: 100
   maxCurrencyDrop: 200
   drops:
-  - itemId: test_drop_item
+  - itemId: mushroom_part
     minCount: 1
     maxCount: 1
     dropChance: 0.3

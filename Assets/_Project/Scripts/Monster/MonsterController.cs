@@ -5,6 +5,7 @@ using IdleonGame.Core;
 using IdleonGame.Items;
 using IdleonGame.Levels;
 using IdleonGame.UI;
+using IdleonGame.Upgrades;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
@@ -170,6 +171,7 @@ namespace IdleonGame.Monster
                 && Random.value <= definition.CurrencyDropChance)
             {
                 var currencyAmount = Random.Range(definition.MinCurrencyDrop, definition.MaxCurrencyDrop + 1);
+                currencyAmount = Mathf.Max(1, Mathf.RoundToInt(currencyAmount * UpgradeEffectCalculator.GetMonsterCurrencyDropMultiplier(PlayerRuntimeDataService.Instance?.Data)));
                 WorldItemDropper.SpawnCurrency(currencyAmount, transform.position, name, targetScene: gameObject.scene);
             }
 

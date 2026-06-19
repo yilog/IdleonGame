@@ -35,8 +35,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 130, y: -36}
-  m_SizeDelta: {x: 210, y: 34}
+  m_AnchoredPosition: {x: 112.70886, y: -36}
+  m_SizeDelta: {x: 175.4177, y: 34}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8976027644759987627
 CanvasRenderer:
@@ -79,7 +79,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 'Your Coins: 0G 0S 0C'
+  m_Text: 'Coins: 0G 0S 0C'
 --- !u!1 &4270846918167493560
 GameObject:
   m_ObjectHideFlags: 0

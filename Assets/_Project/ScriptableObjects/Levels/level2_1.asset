@@ -20,5 +20,5 @@ MonoBehaviour:
   defaultSpawnPosition: {x: -8, y: -2}
   unlockConditions:
   - conditionType: 1
-    monsterId: rat
-    requiredCount: 3
+    monsterId: mushroom
+    requiredCount: 10

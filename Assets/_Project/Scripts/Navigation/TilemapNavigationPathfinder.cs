@@ -186,6 +186,8 @@ namespace IdleonGame.Navigation
             {
                 AddStandNeighbor(node.Cell + Vector3Int.left, output);
                 AddStandNeighbor(node.Cell + Vector3Int.right, output);
+                AddOneLevelStepUpNeighbor(node.Cell + new Vector3Int(-1, 1, 0), output);
+                AddOneLevelStepUpNeighbor(node.Cell + new Vector3Int(1, 1, 0), output);
                 AddOneLevelDropNeighbor(node.Cell + new Vector3Int(-1, -1, 0), output);
                 AddOneLevelDropNeighbor(node.Cell + new Vector3Int(1, -1, 0), output);
                 AddRopeNeighbor(node.Cell, output);
@@ -205,6 +207,14 @@ namespace IdleonGame.Navigation
             if (IsValidNode(node))
             {
                 output.Add(node);
+            }
+        }
+
+        private void AddOneLevelStepUpNeighbor(Vector3Int cell, List<TilemapNavigationNode> output)
+        {
+            if (IsStandCell(cell) && groundTilemap.HasTile(cell + Vector3Int.down))
+            {
+                output.Add(new TilemapNavigationNode(cell, NavigationNodeKind.Stand));
             }
         }
 
