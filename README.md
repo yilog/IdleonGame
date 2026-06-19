@@ -6,4 +6,4 @@ Unity 2D horizontal RPG project skeleton.
 
 - Tilemap-oriented map organization.
 
-press T switch to Archer
+- Press T switch to Archer
